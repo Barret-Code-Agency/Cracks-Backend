@@ -13,6 +13,8 @@ dist
 .vscode
 .idea
 
+# Documentos locales (no versionar)
+*.docx
 
 # OS
 .DS_Store

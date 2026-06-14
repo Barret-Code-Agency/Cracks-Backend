@@ -7,6 +7,14 @@ Cracks es una aplicación de mensajería instantánea full-stack inspirada en Wh
 
 Este repositorio contiene el **backend**: una API REST construida con **Node.js + Express** sobre **MongoDB**, con arquitectura en capas, autenticación con JWT, verificación por email y un modelo de datos relacional adaptado a Mongoose. El frontend (React + Vite) vive en un repositorio aparte y consume esta API.
 
+## Demo en vivo
+
+- **Aplicación (frontend):** https://chat-de-cracks.vercel.app
+- **API (backend):** https://cracks-backend.onrender.com
+- **Usuario de prueba** (email ya verificado): `cracks.tp.utn@gmail.com` · contraseña `Cracks2026!`
+
+Iniciá sesión con el usuario de prueba y vas a encontrar los 50 cracks y un chat de bienvenida. También podés registrarte con tu propio email: recibís el correo de verificación y, al entrar, ya quedás conectado para chatear. El backend usa el plan gratuito de Render, por lo que la primera petición tras un rato de inactividad puede demorar ~30-50 s en "despertar".
+
 ---
 
 ## Índice
@@ -347,13 +355,25 @@ Si `GMAIL_USER` y `GMAIL_PASS` no están configurados, el envío de emails funci
 
 ## 14. Usuario de prueba
 
-Se entrega una cuenta con el **email ya verificado** junto con el despliegue. En entorno local, cualquier usuario puede registrarse y completar la verificación abriendo el link que devuelve el endpoint de registro.
+Cuenta de prueba con el **email ya verificado**, lista para usar en la app desplegada:
+
+| Email | Contraseña |
+|---|---|
+| `cracks.tp.utn@gmail.com` | `Cracks2026!` |
+
+Al iniciar sesión con ella ya aparecen los 50 cracks y un chat de bienvenida. Cualquier persona también puede **registrarse con su propio email**: recibe el correo de verificación, lo confirma y al entrar queda conectada para poder chatear.
 
 ## 15. Despliegue
 
-- **Backend:** Render (servidor Express) con MongoDB Atlas como base de datos.
-- **Frontend:** Vercel.
-- El CORS del backend habilita el dominio del frontend desplegado.
+La aplicación está **desplegada y online**:
+
+| Componente | Plataforma | URL |
+|---|---|---|
+| Frontend (app) | Vercel | https://chat-de-cracks.vercel.app |
+| Backend (API) | Render | https://cracks-backend.onrender.com |
+| Base de datos | MongoDB Atlas | cluster M0 (gratuito) |
+
+El backend corre en el plan gratuito de Render (se suspende tras inactividad; la primera petición puede demorar ~30-50 s). La base de datos vive en MongoDB Atlas, sembrada con los 50 cracks y la cuenta de prueba mediante los scripts `npm run seed` y `npm run seed:demo`. El CORS del backend está habilitado para el frontend.
 
 ## 16. Sobre el modelo de datos
 
