@@ -1,0 +1,70 @@
+import conversationService from '../services/conversation.service.js'
+
+class ConversationController {
+    async createPrivate(request, response) {
+        const conversation = await conversationService.findOrCreatePrivate(
+            request.user.user_id,
+            request.body.user_id
+        )
+        return response.status(200).json({
+            ok: true,
+            status: 200,
+            message: 'Conversacion lista',
+            data: { conversation }
+        })
+    }
+
+    async listMine(request, response) {
+        const conversations = await conversationService.listMyConversations(request.user.user_id)
+        return response.status(200).json({
+            ok: true,
+            status: 200,
+            message: 'Conversaciones obtenidas',
+            data: { conversations }
+        })
+    }
+
+    async sendMessage(request, response) {
+        const message = await conversationService.sendMessage(
+            request.params.conversation_id,
+            request.user.user_id,
+            request.body.content
+        )
+        return response.status(201).json({
+            ok: true,
+            status: 201,
+            message: 'Mensaje enviado',
+            data: { message }
+        })
+    }
+
+    async sendBotReply(request, response) {
+        const message = await conversationService.sendBotReply(
+            request.params.conversation_id,
+            request.user.user_id,
+            request.body.content
+        )
+        return response.status(201).json({
+            ok: true,
+            status: 201,
+            message: 'Respuesta del crack enviada',
+            data: { message }
+        })
+    }
+
+    async getMessages(request, response) {
+        const messages = await conversationService.getMessages(
+            request.params.conversation_id,
+            request.user.user_id
+        )
+        return response.status(200).json({
+            ok: true,
+            status: 200,
+            message: 'Mensajes obtenidos',
+            data: { messages }
+        })
+    }
+}
+
+const conversationController = new ConversationController()
+export default conversationController

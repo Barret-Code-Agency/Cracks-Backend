@@ -1,0 +1,651 @@
+{
+  "info": {
+    "name": "Cracks API",
+    "_postman_id": "cracks-api-collection",
+    "description": "Coleccion de la API de Cracks (Trabajo Integrador Final - Back End - UTN). Base local en la variable base_url. Flujo sugerido: Registrar -> Verificar email (pegar el token del mail en la variable verify_token) -> Login (guarda el token automaticamente) -> usar el resto de los endpoints. Las rutas protegidas usan el Bearer token de la coleccion.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "user_id",
+      "value": ""
+    },
+    {
+      "key": "contact_user_id",
+      "value": ""
+    },
+    {
+      "key": "contact_id",
+      "value": ""
+    },
+    {
+      "key": "group_id",
+      "value": ""
+    },
+    {
+      "key": "conversation_id",
+      "value": ""
+    },
+    {
+      "key": "verify_token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Autenticacion",
+      "item": [
+        {
+          "name": "Registrar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ],
+              "raw": "{{base_url}}/api/auth/register"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"fernando@cracks.com\",\n  \"password\": \"secret123\",\n  \"display_name\": \"Fernando\",\n  \"phone_number\": \"+54 9 11 5555 0000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Crea el usuario y envia el email de verificacion."
+          },
+          "response": []
+        },
+        {
+          "name": "Verificar email",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "verify-email"
+              ],
+              "raw": "{{base_url}}/api/auth/verify-email?token={{verify_token}}",
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{verify_token}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Verifica el email. El token llega en el link del correo."
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ],
+              "raw": "{{base_url}}/api/auth/login"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"fernando@cracks.com\",\n  \"password\": \"secret123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Devuelve user + access_token. El token se guarda solo en la variable token."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.data && json.data.access_token) {",
+                  "    pm.collectionVariables.set('token', json.data.access_token);",
+                  "    console.log('Token guardado en la variable token');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Buscar usuarios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ],
+              "raw": "{{base_url}}/api/users?q=Messi",
+              "query": [
+                {
+                  "key": "q",
+                  "value": "Messi"
+                }
+              ]
+            },
+            "description": "Busca usuarios por nombre o email para agregarlos como contacto."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Contactos",
+      "item": [
+        {
+          "name": "Agregar contacto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "contacts"
+              ],
+              "raw": "{{base_url}}/api/contacts"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contact_user_id\": \"{{contact_user_id}}\",\n  \"alias\": \"El GOAT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar contactos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "contacts"
+              ],
+              "raw": "{{base_url}}/api/contacts"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ver contacto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "contacts",
+                "{{contact_id}}"
+              ],
+              "raw": "{{base_url}}/api/contacts/{{contact_id}}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Editar contacto",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "contacts",
+                "{{contact_id}}"
+              ],
+              "raw": "{{base_url}}/api/contacts/{{contact_id}}"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alias\": \"Lio\",\n  \"is_favorite\": true,\n  \"is_blocked\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar contacto",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "contacts",
+                "{{contact_id}}"
+              ],
+              "raw": "{{base_url}}/api/contacts/{{contact_id}}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Grupos",
+      "item": [
+        {
+          "name": "Crear grupo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "groups"
+              ],
+              "raw": "{{base_url}}/api/groups"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Los Cracks\",\n  \"description\": \"Grupo de prueba\",\n  \"member_ids\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar grupos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "groups"
+              ],
+              "raw": "{{base_url}}/api/groups"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ver grupo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "{{group_id}}"
+              ],
+              "raw": "{{base_url}}/api/groups/{{group_id}}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Editar grupo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "{{group_id}}"
+              ],
+              "raw": "{{base_url}}/api/groups/{{group_id}}"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Los Cracks AFA\",\n  \"description\": \"Campeones\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar grupo",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "{{group_id}}"
+              ],
+              "raw": "{{base_url}}/api/groups/{{group_id}}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Agregar miembro",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "{{group_id}}",
+                "members"
+              ],
+              "raw": "{{base_url}}/api/groups/{{group_id}}/members"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{user_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Quitar miembro",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "{{group_id}}",
+                "members",
+                "{{user_id}}"
+              ],
+              "raw": "{{base_url}}/api/groups/{{group_id}}/members/{{user_id}}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Conversaciones y mensajes",
+      "item": [
+        {
+          "name": "Mis chats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "conversations"
+              ],
+              "raw": "{{base_url}}/api/conversations"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Abrir chat privado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "conversations",
+                "private"
+              ],
+              "raw": "{{base_url}}/api/conversations/private"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{user_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Crea o recupera el chat privado con ese usuario."
+          },
+          "response": []
+        },
+        {
+          "name": "Mensajes de la conversacion",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "conversations",
+                "{{conversation_id}}",
+                "messages"
+              ],
+              "raw": "{{base_url}}/api/conversations/{{conversation_id}}/messages"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Enviar mensaje",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "conversations",
+                "{{conversation_id}}",
+                "messages"
+              ],
+              "raw": "{{base_url}}/api/conversations/{{conversation_id}}/messages"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Hola, todo bien?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Salud",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ],
+              "raw": "{{base_url}}/api/health"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
