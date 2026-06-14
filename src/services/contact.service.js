@@ -2,6 +2,9 @@ import contactRepository from '../repositories/contact.repository.js'
 import userRepository from '../repositories/user.repository.js'
 import ServerError from '../utils/serverError.js'
 
+// Cuenta del creador de la app: todo usuario nuevo arranca conectado con el
+const HOST_EMAIL = 'fhdelgado.utn@gmail.com'
+
 class ContactService {
     async addContact(owner_user_id, contact_user_id, alias) {
         if (String(owner_user_id) === String(contact_user_id)) {
@@ -72,6 +75,22 @@ class ContactService {
             contact_user_id: bot._id
         }))
         await contactRepository.insertMany(contactos)
+    }
+
+    // El usuario nuevo queda conectado con el anfitrion (Fernando), en ambos sentidos
+    async seedHostContact(new_user_id) {
+        const host = await userRepository.getByEmail(HOST_EMAIL)
+        if (!host || String(host._id) === String(new_user_id)) {
+            return
+        }
+        const link = async (owner_id, contact_id) => {
+            const existing = await contactRepository.findByOwnerAndContact(owner_id, contact_id)
+            if (!existing) {
+                await contactRepository.create({ owner_user_id: owner_id, contact_user_id: contact_id })
+            }
+        }
+        await link(new_user_id, host._id) // el nuevo usuario ve a Fernando
+        await link(host._id, new_user_id) // Fernando ve al nuevo usuario
     }
 }
 
