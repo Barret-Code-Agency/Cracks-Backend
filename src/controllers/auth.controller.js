@@ -1,18 +1,11 @@
 import authService from '../services/auth.service.js'
 import ENVIRONMENT from '../config/environment.js'
-
-const publicUser = (user) => ({
-    id: user._id,
-    email: user.email,
-    display_name: user.display_name,
-    avatar_url: user.avatar_url,
-    email_verificado: user.email_verificado
-})
+import { toPublicUser } from '../mappers/user.mapper.js'
 
 class AuthController {
     async register(request, response) {
         const { user, verification_token } = await authService.register(request.body)
-        const data = { user: publicUser(user) }
+        const data = { user: toPublicUser(user) }
 
         // En desarrollo (sin Gmail real) devolvemos el link de verificacion
         // para poder verificar la cuenta sin una casilla de correo.
@@ -44,7 +37,7 @@ class AuthController {
             ok: true,
             status: 200,
             message: 'Sesion iniciada correctamente',
-            data: { access_token, user: publicUser(user) }
+            data: { access_token, user: toPublicUser(user) }
         })
     }
 }
