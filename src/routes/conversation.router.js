@@ -12,6 +12,6 @@ conversationRouter.get('/', conversationController.listMine)
 conversationRouter.post('/private', validatePrivateConversation, conversationController.createPrivate)
 conversationRouter.get('/:conversation_id/messages', conversationController.getMessages)
 conversationRouter.post('/:conversation_id/messages', validateMessage, conversationController.sendMessage)
-conversationRouter.post('/:conversation_id/bot-reply', validateMessage, conversationController.sendBotReply)
+conversationRouter.post('/:conversation_id/bot-reply', validateMessage, conversationController.generateBotReply)
 
 export default conversationRouter

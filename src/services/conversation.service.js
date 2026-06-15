@@ -2,6 +2,7 @@ import conversationRepository from '../repositories/conversation.repository.js'
 import participantRepository from '../repositories/participant.repository.js'
 import messageRepository from '../repositories/message.repository.js'
 import userRepository from '../repositories/user.repository.js'
+import aiService from './ai.service.js'
 import ServerError from '../utils/serverError.js'
 import { CONVERSATION_TYPE } from '../constants/conversation.constant.js'
 
@@ -63,9 +64,9 @@ class ConversationService {
         return await message.populate('sender_user_id', 'display_name avatar_url es_bot')
     }
 
-    // Persiste la respuesta de un crack (bot) en una conversacion privada.
+    // Genera (con IA, en el servidor) y persiste la respuesta de un crack en una conversacion privada.
     // Solo el participante humano puede dispararla, y debe existir un participante bot.
-    async sendBotReply(conversation_id, requester_user_id, content) {
+    async generateBotReply(conversation_id, requester_user_id, user_text) {
         await this.assertParticipant(conversation_id, requester_user_id)
 
         const participants = await participantRepository.listByConversation(conversation_id)
@@ -75,11 +76,21 @@ class ConversationService {
         if (!botParticipant) {
             throw new ServerError('Esta conversacion no tiene un crack para responder', 400)
         }
+        const human = participants.find(
+            (p) => String(p.user_id._id) === String(requester_user_id)
+        )
+
+        const reply = await aiService.generateCrackReply({
+            crack_name: botParticipant.user_id.display_name,
+            crack_bio: botParticipant.user_id.status_message,
+            user_name: human?.user_id.display_name || 'un amigo',
+            user_text
+        })
 
         const message = await messageRepository.create({
             conversation_id,
             sender_user_id: botParticipant.user_id._id,
-            content
+            content: reply
         })
 
         await conversationRepository.touch(conversation_id)

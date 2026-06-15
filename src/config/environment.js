@@ -11,7 +11,8 @@ const ENVIRONMENT = {
     GMAIL_USER: process.env.GMAIL_USER,
     GMAIL_PASS: process.env.GMAIL_PASS,
     URL_BACKEND: process.env.URL_BACKEND,
-    URL_FRONTEND: process.env.URL_FRONTEND
+    URL_FRONTEND: process.env.URL_FRONTEND,
+    GROQ_API_KEY: process.env.GROQ_API_KEY
 }
 
 export default ENVIRONMENT

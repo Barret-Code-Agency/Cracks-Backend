@@ -38,8 +38,8 @@ class ConversationController {
         })
     }
 
-    async sendBotReply(request, response) {
-        const message = await conversationService.sendBotReply(
+    async generateBotReply(request, response) {
+        const message = await conversationService.generateBotReply(
             request.params.conversation_id,
             request.user.user_id,
             request.body.content

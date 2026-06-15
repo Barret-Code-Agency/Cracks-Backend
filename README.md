@@ -3,7 +3,7 @@
 **Trabajo Integrador Final — Desarrollo Back End — UTN**
 Autor: **Fernando Delgado**
 
-Cracks es una aplicación de mensajería instantánea full-stack inspirada en WhatsApp Web. Permite que los usuarios se registren con su email, lo verifiquen y chateen entre sí en conversaciones privadas y grupales. Además incorpora a **50 deportistas de elite** ("los cracks") precargados como contactos con los que también se puede conversar: cuando el receptor es uno de estos contactos, el frontend genera la respuesta mediante IA.
+Cracks es una aplicación de mensajería instantánea full-stack inspirada en WhatsApp Web. Permite que los usuarios se registren con su email, lo verifiquen y chateen entre sí en conversaciones privadas y grupales. Además incorpora a **50 deportistas de elite** ("los cracks") precargados como contactos con los que también se puede conversar: cuando el receptor es uno de estos contactos, el backend genera la respuesta mediante IA (Groq), de modo que la API key vive solo en el servidor y nunca llega al navegador.
 
 Este repositorio contiene el **backend**: una API REST construida con **Node.js + Express** sobre **MongoDB**, con arquitectura en capas, autenticación con JWT, verificación por email y un modelo de datos relacional adaptado a Mongoose. El frontend (React + Vite) vive en un repositorio aparte y consume esta API.
 
@@ -276,7 +276,7 @@ Base local: `http://localhost:3000`
 | POST | `/private` | Sí | `{ user_id }` | Abre o recupera el chat privado con ese usuario |
 | GET | `/:conversation_id/messages` | Sí | — | Mensajes de la conversación |
 | POST | `/:conversation_id/messages` | Sí | `{ content, content_type?, reply_to_message_id? }` | Envía un mensaje |
-| POST | `/:conversation_id/bot-reply` | Sí | `{ content }` | Persiste la respuesta de un crack (bot) en la conversación |
+| POST | `/:conversation_id/bot-reply` | Sí | `{ content }` | Genera con IA (Groq, en el servidor) y persiste la respuesta del crack; `content` es el mensaje del usuario a responder |
 
 ### Salud — `/api/health`
 
@@ -350,8 +350,9 @@ La API queda disponible en `http://localhost:3000`.
 | GMAIL_PASS | App-password de esa casilla |
 | URL_BACKEND | URL pública del backend |
 | URL_FRONTEND | URL pública del frontend |
+| GROQ_API_KEY | API key de Groq para generar las respuestas de los cracks (corre en el servidor) |
 
-Si `GMAIL_USER` y `GMAIL_PASS` no están configurados, el envío de emails funciona en modo de desarrollo (no envía correos reales), de modo que se puede probar el flujo completo en local.
+Si `GMAIL_USER` y `GMAIL_PASS` no están configurados, el envío de emails funciona en modo de desarrollo (no envía correos reales), de modo que se puede probar el flujo completo en local. Del mismo modo, si `GROQ_API_KEY` no está configurada, los cracks responden con frases de respaldo en vez de cortar el chat.
 
 ## 14. Usuario de prueba
 
