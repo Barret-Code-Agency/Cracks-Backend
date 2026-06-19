@@ -3,7 +3,7 @@
 **Trabajo Integrador Final — Desarrollo Back End — UTN**
 Autor: **Fernando Delgado**
 
-Cracks es una aplicación de mensajería instantánea full-stack inspirada en WhatsApp Web. Permite que los usuarios se registren con su email, lo verifiquen y chateen entre sí en conversaciones privadas y grupales. Además incorpora a **50 deportistas de elite** ("los cracks") precargados como contactos con los que también se puede conversar: cuando el receptor es uno de estos contactos, el backend genera la respuesta mediante IA (Groq), de modo que la API key vive solo en el servidor y nunca llega al navegador.
+Cracks es una aplicación de mensajería instantánea full-stack inspirada en WhatsApp Web. Permite que los usuarios se registren con su email, lo verifiquen y chateen entre sí en conversaciones privadas y grupales. Además incorpora a **12 deportistas de elite** ("los cracks") precargados como contactos con los que también se puede conversar: cuando el receptor es uno de estos contactos, el backend genera la respuesta mediante IA (Groq), de modo que la API key vive solo en el servidor y nunca llega al navegador.
 
 Este repositorio contiene el **backend**: una API REST construida con **Node.js + Express** sobre **MongoDB**, con arquitectura en capas, autenticación con JWT, verificación por email y un modelo de datos relacional adaptado a Mongoose. El frontend (React + Vite) vive en un repositorio aparte y consume esta API.
 
@@ -13,7 +13,7 @@ Este repositorio contiene el **backend**: una API REST construida con **Node.js 
 - **API (backend):** https://cracks-backend.onrender.com
 - **Usuario de prueba** (email ya verificado): `cracks.tp.utn@gmail.com` · contraseña `Cracks2026!`
 
-Iniciá sesión con el usuario de prueba y vas a encontrar los 50 cracks y un chat de bienvenida. También podés registrarte con tu propio email: recibís el correo de verificación y, al entrar, ya quedás conectado para chatear. El backend usa el plan gratuito de Render, por lo que la primera petición tras un rato de inactividad puede demorar ~30-50 s en "despertar".
+Iniciá sesión con el usuario de prueba y vas a encontrar los 12 cracks y un chat de bienvenida. También podés registrarte con tu propio email: recibís el correo de verificación y, al entrar, ya quedás conectado para chatear. El backend usa el plan gratuito de Render, por lo que la primera petición tras un rato de inactividad puede demorar ~30-50 s en "despertar".
 
 ---
 
@@ -52,7 +52,7 @@ El diseño parte de una idea central: **una conversación es una conversación**
 - **CRUD de Contactos** (entidad principal), con búsqueda de usuarios por nombre o email para agregarlos.
 - **CRUD de Grupos** (entidad relacionada), con miembros, roles (admin / co-admin / member) y control de permisos.
 - **Mensajería** uno a uno y grupal, reutilizando el mismo modelo de conversaciones.
-- **50 cracks precargados** como usuarios bot, buscables y agregables como contacto.
+- **12 cracks precargados** como usuarios bot, buscables y agregables como contacto.
 - Arquitectura en capas, validación de entrada, manejo centralizado de errores y respuestas con formato uniforme.
 
 ## 3. Stack tecnológico
@@ -116,7 +116,7 @@ src/
  ├─ routes/         Routers de Express
  ├─ middleware/     Auth, validación y manejo de errores
  ├─ utils/          JWT y clase de error
- ├─ seed/           Carga de los 50 cracks
+ ├─ seed/           Carga de los 12 cracks
  └─ main.js         Punto de entrada (conexión + servidor)
 ```
 
@@ -124,7 +124,7 @@ src/
 
 El modelo está formado por **6 entidades**. Su diseño parte de un modelo relacional y se adapta a MongoDB usando referencias (`ObjectId` + `ref`) y `populate`.
 
-- **users** — Las cuentas. Incluye dos extensiones propias de Cracks: `es_bot` (marca a los 50 deportistas) y `email_verificado` (verificación obligatoria del TP).
+- **users** — Las cuentas. Incluye dos extensiones propias de Cracks: `es_bot` (marca a los 12 deportistas) y `email_verificado` (verificación obligatoria del TP).
 - **contacts** — La agenda de cada usuario. Relación N:M autorreferenciada y **direccional**: que A tenga a B no implica que B tenga a A. Único por par `(owner, contact)`.
 - **conversations** — La entidad raíz unificada. Su campo `type` distingue `private` de `group`. Su `updated_at` se actualiza con cada mensaje, lo que permite ordenar la lista de chats.
 - **groups** — Extiende a `conversations` (relación 1:1) con los datos propios de un grupo: nombre, descripción, avatar y creador.
@@ -309,7 +309,7 @@ Ante un error, el middleware central responde con la misma estructura:
 
 ## 11. Seed de los cracks
 
-El proyecto incluye un seed que carga a los 50 deportistas como usuarios `es_bot`:
+El proyecto incluye un seed que carga a los 12 deportistas como usuarios `es_bot`:
 
 ```
 npm run seed
@@ -332,7 +332,7 @@ Crear un archivo `.env` en la raíz (ver la sección siguiente) y luego:
 ```
 npm run dev      # desarrollo, con recarga automática
 npm start        # producción
-npm run seed     # carga los 50 cracks
+npm run seed     # carga los 12 cracks
 ```
 
 La API queda disponible en `http://localhost:3000`.
@@ -362,7 +362,7 @@ Cuenta de prueba con el **email ya verificado**, lista para usar en la app despl
 |---|---|
 | `cracks.tp.utn@gmail.com` | `Cracks2026!` |
 
-Al iniciar sesión con ella ya aparecen los 50 cracks y un chat de bienvenida. Cualquier persona también puede **registrarse con su propio email**: recibe el correo de verificación, lo confirma y al entrar queda conectada para poder chatear.
+Al iniciar sesión con ella ya aparecen los 12 cracks y un chat de bienvenida. Cualquier persona también puede **registrarse con su propio email**: recibe el correo de verificación, lo confirma y al entrar queda conectada para poder chatear.
 
 ## 15. Despliegue
 
@@ -374,7 +374,7 @@ La aplicación está **desplegada y online**:
 | Backend (API) | Render | https://cracks-backend.onrender.com |
 | Base de datos | MongoDB Atlas | cluster M0 (gratuito) |
 
-El backend corre en el plan gratuito de Render (se suspende tras inactividad; la primera petición puede demorar ~30-50 s). La base de datos vive en MongoDB Atlas, sembrada con los 50 cracks y la cuenta de prueba mediante los scripts `npm run seed` y `npm run seed:demo`. El CORS del backend está habilitado para el frontend.
+El backend corre en el plan gratuito de Render (se suspende tras inactividad; la primera petición puede demorar ~30-50 s). La base de datos vive en MongoDB Atlas, sembrada con los 12 cracks y la cuenta de prueba mediante los scripts `npm run seed` y `npm run seed:demo`. El CORS del backend está habilitado para el frontend.
 
 ## 16. Sobre el modelo de datos
 
@@ -393,6 +393,8 @@ El frontend (React + Vite) sigue buenas prácticas de maquetación y accesibilid
 - **Estados activos en la navegación:** la navegación y los listados marcan el ítem activo con una clase modificadora (`--active`), indicando en qué sección está el usuario.
 - **Nombres de clases descriptivos:** convención BEM (`add-panel__result-name`, `cw__bubble--me`), evitando nombres genéricos que dificulten el mantenimiento.
 - **Sin valores hardcodeados:** colores, espaciados y radios provienen de tokens CSS (`var(--...)`) definidos en un único lugar, garantizando contraste y coherencia entre los temas claro y oscuro.
+
+**Alcance de la interfaz.** Con el fin de reproducir fielmente la experiencia de WhatsApp Web, la interfaz incorpora algunas secciones de carácter ilustrativo —Estados, Canales, Comunidades, Multimedia y la pantalla de vinculación por QR—. Estas reproducen la estética de la aplicación original a modo de maqueta y no se conectan con la API. Las funcionalidades centrales del Trabajo Integrador —registro con verificación por email, inicio de sesión, gestión de contactos, mensajería privada y grupal, y las respuestas de los cracks generadas por IA— están todas respaldadas por este backend.
 
 ---
 
