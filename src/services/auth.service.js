@@ -30,7 +30,10 @@ class AuthService {
         await contactService.seedHostContact(new_user._id)
 
         const verification_token = signToken({ user_id: new_user._id }, '1d')
-        await mailService.sendVerificationEmail(new_user.email, verification_token)
+        // Enviamos el email de verificacion SIN bloquear el registro: si el SMTP falla o tarda,
+        // la cuenta igual queda creada y el registro responde al instante.
+        mailService.sendVerificationEmail(new_user.email, verification_token)
+            .catch((error) => console.error('No se pudo enviar el email de verificacion:', error.message))
 
         return { user: new_user, verification_token }
     }

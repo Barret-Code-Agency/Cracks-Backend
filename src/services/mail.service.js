@@ -6,7 +6,7 @@ class MailService {
         const verify_url = `${ENVIRONMENT.URL_BACKEND}/api/auth/verify-email?token=${verification_token}`
 
         await mailer_transport.sendMail({
-            from: `"Chat de Cracks" <${ENVIRONMENT.GMAIL_USER || 'no-reply@cracks.app'}>`,
+            from: `"${ENVIRONMENT.MAIL_FROM_NAME}" <${ENVIRONMENT.MAIL_FROM}>`,
             to: email,
             subject: 'Verifica tu cuenta de Chat de Cracks',
             html: `
