@@ -224,7 +224,7 @@ El modelo está formado por **6 entidades**. Su diseño parte de un modelo relac
 - **Verificación por email:** al registrarse se envía un email con un link de activación (`nodemailer`). Hasta que el email no está verificado, el login es rechazado.
 - **Middlewares obligatorios:**
   - **CORS** — habilita el consumo desde el frontend.
-  - **Validación de entrada** — rechaza payloads inválidos con un `400` antes de llegar a la lógica.
+  - **Validación de entrada** — un middleware propio (`validate.middleware.js`) revisa el `body` de cada petición y rechaza con `400` lo que falte o esté mal formado, antes de llegar a la lógica. Se implementó a mano en vez de usar una librería como `express-validator`: el resultado es el mismo (ningún dato inválido llega al controller), con control total del mecanismo y sin sumar dependencias.
   - **Autenticación JWT** — protege las rutas sensibles.
   - **Manejo centralizado de errores** — un único middleware traduce los errores a respuestas uniformes.
 
@@ -395,6 +395,8 @@ El frontend (React + Vite) sigue buenas prácticas de maquetación y accesibilid
 - **Sin valores hardcodeados:** colores, espaciados y radios provienen de tokens CSS (`var(--...)`) definidos en un único lugar, garantizando contraste y coherencia entre los temas claro y oscuro.
 
 **Alcance de la interfaz.** Con el fin de reproducir fielmente la experiencia de WhatsApp Web, la interfaz incorpora algunas secciones de carácter ilustrativo —Estados, Canales, Comunidades, Multimedia y la pantalla de vinculación por QR—. Estas reproducen la estética de la aplicación original a modo de maqueta y no se conectan con la API. Las funcionalidades centrales del Trabajo Integrador —registro con verificación por email, inicio de sesión, gestión de contactos, mensajería privada y grupal, y las respuestas de los cracks generadas por IA— están todas respaldadas por este backend.
+
+**Actualización de los mensajes.** El frontend refresca cada chat abierto mediante *polling*: consulta `GET /api/conversations/:id/messages` cada 4 segundos. Es una solución simple y suficiente para el alcance del trabajo; la evolución natural sería usar **WebSockets** para tiempo real (el servidor empuja los mensajes en lugar de que el cliente los pida), a cambio de mayor complejidad de infraestructura.
 
 ---
 
