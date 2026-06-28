@@ -7,6 +7,29 @@ import ServerError from '../utils/serverError.js'
 import { CONVERSATION_TYPE } from '../constants/conversation.constant.js'
 
 class ConversationService {
+    // Busca la conversacion privada activa entre dos usuarios (o null si no existe).
+    async findPrivateBetween(my_user_id, other_user_id) {
+        const myParticipations = await participantRepository.listActiveByUser(my_user_id)
+        const privateConvs = await conversationRepository.listPrivateByIds(
+            myParticipations.map(p => p.conversation_id)
+        )
+        const shared = await participantRepository.findActiveInConversations(
+            other_user_id,
+            privateConvs.map(c => c._id)
+        )
+        return shared ? await conversationRepository.getById(shared.conversation_id) : null
+    }
+
+    // Borra (soft-delete) la conversacion privada entre dos usuarios, si existe.
+    // La usa el borrado de contactos para que, al eliminar a alguien, se vaya tambien el chat.
+    async deletePrivateBetween(my_user_id, other_user_id) {
+        const conversation = await this.findPrivateBetween(my_user_id, other_user_id)
+        if (conversation) {
+            await conversationRepository.softDelete(conversation._id)
+        }
+        return conversation
+    }
+
     // Busca la conversacion privada existente entre dos usuarios, o la crea.
     async findOrCreatePrivate(my_user_id, other_user_id) {
         if (String(my_user_id) === String(other_user_id)) {
@@ -18,16 +41,9 @@ class ConversationService {
             throw new ServerError('Usuario no encontrado', 404)
         }
 
-        const myParticipations = await participantRepository.listActiveByUser(my_user_id)
-        const privateConvs = await conversationRepository.listPrivateByIds(
-            myParticipations.map(p => p.conversation_id)
-        )
-        const shared = await participantRepository.findActiveInConversations(
-            other_user_id,
-            privateConvs.map(c => c._id)
-        )
-        if (shared) {
-            return await conversationRepository.getById(shared.conversation_id)
+        const existing = await this.findPrivateBetween(my_user_id, other_user_id)
+        if (existing) {
+            return existing
         }
 
         const conversation = await conversationRepository.create(CONVERSATION_TYPE.PRIVATE)

@@ -1,5 +1,6 @@
 import contactRepository from '../repositories/contact.repository.js'
 import userRepository from '../repositories/user.repository.js'
+import conversationService from './conversation.service.js'
 import ServerError from '../utils/serverError.js'
 
 // Cuenta del creador de la app: todo usuario nuevo arranca conectado con el
@@ -61,6 +62,9 @@ class ContactService {
         if (!deleted) {
             throw new ServerError('Contacto no encontrado', 404)
         }
+        // Al eliminar el contacto se borra tambien la conversacion privada con esa persona
+        // (soft-delete): el chat desaparece y, si se vuelve a agregar, arranca limpio.
+        await conversationService.deletePrivateBetween(owner_user_id, deleted.contact_user_id)
         return deleted
     }
 
