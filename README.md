@@ -50,6 +50,7 @@ El diseño parte de una idea central: **una conversación es una conversación**
 - Registro de usuarios con hash de contraseña (bcrypt) y **verificación obligatoria por email**.
 - Login que devuelve un **JWT con expiración**; las rutas sensibles quedan protegidas por un middleware de autenticación.
 - **Protección contra fuerza bruta** en el login y contra registro masivo, mediante *rate limiting* por IP.
+- **CAPTCHA (Cloudflare Turnstile)** en el registro para frenar bots automatizados.
 - **CRUD de Contactos** (entidad principal), con búsqueda de usuarios por nombre o email para agregarlos.
 - **CRUD de Grupos** (entidad relacionada), con miembros, roles (admin / co-admin / member) y control de permisos.
 - **Mensajería** uno a uno y grupal, reutilizando el mismo modelo de conversaciones.
@@ -68,6 +69,7 @@ El diseño parte de una idea central: **una conversación es una conversación**
 | Hash de contraseñas | `bcrypt` |
 | Envío de emails | `nodemailer` |
 | Rate limiting | `express-rate-limit` |
+| CAPTCHA | Cloudflare Turnstile |
 | Configuración | `dotenv` |
 | CORS | `cors` |
 
@@ -229,6 +231,7 @@ El modelo está formado por **6 entidades**. Su diseño parte de un modelo relac
   - **CORS** — habilita el consumo desde el frontend.
   - **Validación de entrada** — un middleware propio (`validate.middleware.js`) revisa el `body` de cada petición y rechaza con `400` lo que falte o esté mal formado, antes de llegar a la lógica. Se implementó a mano en vez de usar una librería como `express-validator`: el resultado es el mismo (ningún dato inválido llega al controller), con control total del mecanismo y sin sumar dependencias.
   - **Rate limiting** — `rateLimit.middleware.js` aplica el límite por IP en `/login` y `/register`.
+  - **CAPTCHA** — `turnstile.middleware.js` valida el token de Cloudflare Turnstile en `/register` contra el endpoint `siteverify`. Es condicional: si no hay `TURNSTILE_SECRET` configurado, el captcha queda desactivado y el registro sigue funcionando (útil en local).
   - **Autenticación JWT** — protege las rutas sensibles.
   - **Manejo centralizado de errores** — un único middleware traduce los errores a respuestas uniformes.
 
@@ -359,6 +362,7 @@ La API queda disponible en `http://localhost:3000`.
 | BREVO_API_KEY | API key v3 de Brevo para enviar por su API HTTP (recomendado en producción) |
 | MAIL_FROM | Dirección remitente de los emails |
 | MAIL_FROM_NAME | Nombre visible del remitente |
+| TURNSTILE_SECRET | Secret key de Cloudflare Turnstile (CAPTCHA del registro). Vacío = captcha desactivado |
 | URL_BACKEND | URL pública del backend |
 | URL_FRONTEND | URL pública del frontend |
 | GROQ_API_KEY | API key de Groq para generar las respuestas de los cracks (corre en el servidor) |

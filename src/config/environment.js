@@ -13,6 +13,7 @@ const ENVIRONMENT = {
     SMTP_USER: process.env.SMTP_USER,
     SMTP_PASS: process.env.SMTP_PASS,
     BREVO_API_KEY: process.env.BREVO_API_KEY,
+    TURNSTILE_SECRET: process.env.TURNSTILE_SECRET,
     MAIL_FROM: process.env.MAIL_FROM || 'no-reply@cracks.app',
     MAIL_FROM_NAME: process.env.MAIL_FROM_NAME || 'Chat de Cracks',
     URL_BACKEND: process.env.URL_BACKEND,
