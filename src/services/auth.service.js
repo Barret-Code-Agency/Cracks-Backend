@@ -26,8 +26,9 @@ class AuthService {
         // Auto-seed: el usuario nuevo arranca con los 50 cracks como contactos
         await contactService.seedCracksForUser(new_user._id)
 
-        // Y queda conectado con el anfitrion (Fernando) para poder escribirle
-        await contactService.seedHostContact(new_user._id)
+        // Y queda conectado con el anfitrion (Fernando) para poder escribirle,
+        // con un chat de bienvenida para no entrar a una bandeja vacia
+        await contactService.seedHostContact(new_user._id, new_user.display_name)
 
         const verification_token = signToken({ user_id: new_user._id }, '1d')
         // Enviamos el email de verificacion SIN bloquear el registro: si el SMTP falla o tarda,

@@ -28,8 +28,16 @@ const buildVerificationHtml = (verify_url) => `
                                 </p>
                                 <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto;">
                                     <tr>
-                                        <td align="center" bgcolor="#00a884" style="border-radius:30px; box-shadow:0 4px 12px rgba(0,168,132,0.35);">
-                                            <a href="${verify_url}" style="display:inline-block; padding:16px 50px; color:#ffffff; font-size:16px; font-weight:600; text-decoration:none; border-radius:30px;">Verificar mi cuenta</a>
+                                        <td align="center">
+                                            <!--[if mso]>
+                                            <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${verify_url}" style="height:52px;v-text-anchor:middle;width:240px;" arcsize="58%" stroke="f" fillcolor="#00a884">
+                                            <w:anchorlock/>
+                                            <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">Verificar mi cuenta</center>
+                                            </v:roundrect>
+                                            <![endif]-->
+                                            <!--[if !mso]><!-->
+                                            <a href="${verify_url}" style="display:inline-block; padding:16px 50px; background-color:#00a884; color:#ffffff; font-size:16px; font-weight:600; text-decoration:none; border-radius:30px; box-shadow:0 4px 12px rgba(0,168,132,0.35);">Verificar mi cuenta</a>
+                                            <!--<![endif]-->
                                         </td>
                                     </tr>
                                 </table>

@@ -81,8 +81,9 @@ class ContactService {
         await contactRepository.insertMany(contactos)
     }
 
-    // El usuario nuevo queda conectado con el anfitrion (Fernando), en ambos sentidos
-    async seedHostContact(new_user_id) {
+    // El usuario nuevo queda conectado con el anfitrion (Fernando), en ambos sentidos,
+    // y arranca con un chat de bienvenida para no entrar a una bandeja vacia.
+    async seedHostContact(new_user_id, new_user_name) {
         const host = await userRepository.getByEmail(HOST_EMAIL)
         if (!host || String(host._id) === String(new_user_id)) {
             return
@@ -95,6 +96,21 @@ class ContactService {
         }
         await link(new_user_id, host._id) // el nuevo usuario ve a Fernando
         await link(host._id, new_user_id) // Fernando ve al nuevo usuario
+
+        // Chat de bienvenida: Fernando le manda un saludo inicial. Si algo falla,
+        // no rompemos el registro (el contacto ya quedo enlazado).
+        try {
+            const nombre = (new_user_name || '').split(' ')[0]
+            const saludo = nombre ? `¡Hola ${nombre}!` : '¡Hola!'
+            const conversation = await conversationService.findOrCreatePrivate(new_user_id, host._id)
+            await conversationService.sendMessage(
+                conversation._id,
+                host._id,
+                `${saludo} 👋 Bienvenido a CracksApp. Soy Fernando, el creador de la app. Ya tenés a los cracks en tus contactos: tocá el lápiz para empezar a chatear con cualquiera de ellos. ¡Que lo disfrutes!`
+            )
+        } catch (error) {
+            console.error('No se pudo crear el chat de bienvenida:', error.message)
+        }
     }
 }
 

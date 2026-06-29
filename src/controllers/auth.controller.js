@@ -23,12 +23,25 @@ class AuthController {
 
     async verifyEmail(request, response) {
         await authService.verifyEmail(request.query.token)
-        return response.status(200).send(`
-            <div style="font-family: Arial; text-align: center; padding: 48px;">
-                <h1 style="color:#25D366;">Cuenta verificada</h1>
-                <p>Ya podes iniciar sesion en Cracks.</p>
-            </div>
-        `)
+        const frontend = ENVIRONMENT.URL_FRONTEND || '/'
+        return response.status(200).send(`<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="refresh" content="2;url=${frontend}">
+    <title>Cuenta verificada · CracksApp</title>
+</head>
+<body style="margin:0; font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif; background-color:#eae6df; display:flex; min-height:100vh; align-items:center; justify-content:center;">
+    <div style="background-color:#ffffff; border-radius:16px; padding:48px 40px; text-align:center; max-width:420px; box-shadow:0 4px 24px rgba(0,0,0,0.12);">
+        <div style="width:64px; height:64px; border-radius:50%; background-color:#00a884; margin:0 auto 20px; line-height:64px; color:#ffffff; font-size:34px;">&#10003;</div>
+        <h1 style="margin:0 0 10px; color:#111b21; font-size:22px; font-weight:600;">&iexcl;Cuenta verificada!</h1>
+        <p style="margin:0 0 6px; color:#667781; font-size:15px;">Tu cuenta qued&oacute; activada.</p>
+        <p style="margin:0; color:#8696a0; font-size:13px;">Te llevamos al inicio de sesi&oacute;n&hellip;</p>
+    </div>
+    <script>setTimeout(function(){ location.href = ${JSON.stringify(frontend)}; }, 2000);</script>
+</body>
+</html>`)
     }
 
     async login(request, response) {
