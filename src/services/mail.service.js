@@ -34,7 +34,7 @@ const buildVerificationHtml = (verify_url) => `
                                     </tr>
                                 </table>
                                 <p style="margin:22px 0 0; color:#8696a0; font-size:13px; line-height:1.5;">
-                                    &#9201;&#65039; Este enlace vence en 24 horas.
+                                    &#9201;&#65039; Este link caduca en 24 horas.
                                 </p>
                                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:28px;">
                                     <tr><td style="border-top:1px solid #e9edef; font-size:0; line-height:0;">&nbsp;</td></tr>
