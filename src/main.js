@@ -30,7 +30,9 @@ const app = express()
 // la IP real del cliente via X-Forwarded-For en vez de la IP del proxy.
 app.set('trust proxy', 1)
 
-app.use(cors())
+// exposedHeaders: deja que el frontend lea los headers de rate limit para
+// mostrar el contador de intentos (por defecto CORS no los expone al navegador).
+app.use(cors({ exposedHeaders: ['RateLimit-Limit', 'RateLimit-Remaining', 'RateLimit-Reset', 'Retry-After'] }))
 app.use(express.json({ limit: '5mb' }))
 
 app.get('/api/health', (request, response) => {
