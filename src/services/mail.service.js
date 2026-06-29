@@ -1,59 +1,104 @@
 import mailer_transport from '../config/mailer.config.js'
 import ENVIRONMENT from '../config/environment.js'
 
-class MailService {
-    async sendVerificationEmail(email, verification_token) {
-        const verify_url = `${ENVIRONMENT.URL_BACKEND}/api/auth/verify-email?token=${verification_token}`
+const SUBJECT = 'Verificá tu cuenta de CracksApp'
 
-        await mailer_transport.sendMail({
-            from: `"${ENVIRONMENT.MAIL_FROM_NAME}" <${ENVIRONMENT.MAIL_FROM}>`,
-            to: email,
-            subject: 'Verificá tu cuenta de CracksApp',
-            html: `
-                <div style="margin:0; padding:24px 12px; background-color:#f0f2f5; font-family:'Segoe UI',Roboto,Arial,sans-serif;">
-                    <table role="presentation" align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px; margin:0 auto; border-collapse:collapse;">
+// Plantilla del email de verificación (HTML inline, compatible con Gmail/Outlook).
+const buildVerificationHtml = (verify_url) => `
+                <div style="margin:0; padding:32px 12px; background-color:#eae6df; font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                    <table role="presentation" align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px; margin:0 auto; border-collapse:separate;">
                         <tr>
-                            <td style="background-color:#00a884; padding:32px 24px; text-align:center; border-radius:14px 14px 0 0;">
+                            <td style="background:linear-gradient(135deg,#008f72 0%,#00a884 100%); background-color:#00a884; padding:40px 24px 34px; text-align:center; border-radius:16px 16px 0 0;">
                                 <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto;">
                                     <tr>
-                                        <td style="background-color:#ffffff; border-radius:14px; padding:4px 18px 10px; text-align:center;">
-                                            <span style="color:#00a884; font-size:36px; line-height:1; letter-spacing:7px; font-family:Arial,sans-serif;">&#8226;&#8226;&#8226;</span>
+                                        <td style="background-color:#ffffff; border-radius:22px 22px 22px 4px; padding:13px 22px; text-align:center; box-shadow:0 4px 14px rgba(0,0,0,0.12);">
+                                            <span style="color:#00a884; font-size:30px; line-height:1; letter-spacing:6px; font-family:Arial,sans-serif;">&#8226;&#8226;&#8226;</span>
                                         </td>
                                     </tr>
                                 </table>
-                                <div style="color:#ffffff; font-size:22px; font-weight:700; letter-spacing:0.3px; margin-top:14px;">CracksApp</div>
+                                <div style="color:#ffffff; font-size:24px; font-weight:700; letter-spacing:0.3px; margin-top:18px;">CracksApp</div>
+                                <div style="color:#d4f5ec; font-size:13px; font-weight:400; margin-top:4px;">Un lugar para chatear con los cracks y entre usuarios</div>
                             </td>
                         </tr>
                         <tr>
-                            <td style="background-color:#ffffff; padding:40px 32px 36px; text-align:center;">
-                                <h1 style="margin:0 0 10px; color:#111b21; font-size:21px; font-weight:600;">¡Bienvenido!</h1>
-                                <p style="margin:0 0 30px; color:#667781; font-size:15px; line-height:1.6;">
-                                    Estás a un paso de empezar a chatear con los cracks.<br>Confirmá tu correo para activar tu cuenta.
+                            <td style="background-color:#ffffff; padding:40px 36px 34px; text-align:center;">
+                                <h1 style="margin:0 0 12px; color:#111b21; font-size:22px; font-weight:600;">¡Estás a un paso! &#128075;</h1>
+                                <p style="margin:0 0 30px; color:#667781; font-size:15px; line-height:1.65;">
+                                    Confirmá tu correo para activar tu cuenta y empezar a chatear con los cracks.
                                 </p>
                                 <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto;">
                                     <tr>
-                                        <td align="center" bgcolor="#00a884" style="border-radius:30px;">
-                                            <a href="${verify_url}" style="display:inline-block; padding:15px 46px; color:#ffffff; font-size:16px; font-weight:600; text-decoration:none; border-radius:30px;">Verificar mi cuenta</a>
+                                        <td align="center" bgcolor="#00a884" style="border-radius:30px; box-shadow:0 4px 12px rgba(0,168,132,0.35);">
+                                            <a href="${verify_url}" style="display:inline-block; padding:16px 50px; color:#ffffff; font-size:16px; font-weight:600; text-decoration:none; border-radius:30px;">Verificar mi cuenta</a>
                                         </td>
                                     </tr>
                                 </table>
-                                <p style="margin:32px 0 0; color:#8696a0; font-size:13px; line-height:1.5;">
-                                    Si el botón no funciona, copiá y pegá este enlace:<br>
+                                <p style="margin:22px 0 0; color:#8696a0; font-size:13px; line-height:1.5;">
+                                    &#9201;&#65039; Este enlace vence en 24 horas.
+                                </p>
+                                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:28px;">
+                                    <tr><td style="border-top:1px solid #e9edef; font-size:0; line-height:0;">&nbsp;</td></tr>
+                                </table>
+                                <p style="margin:24px 0 0; color:#8696a0; font-size:12px; line-height:1.5;">
+                                    Si el botón no funciona, copiá y pegá este enlace en tu navegador:<br>
                                     <a href="${verify_url}" style="color:#00a884; word-break:break-all;">${verify_url}</a>
                                 </p>
                             </td>
                         </tr>
                         <tr>
-                            <td style="background-color:#ffffff; padding:22px 32px 30px; text-align:center; border-top:1px solid #e9edef; border-radius:0 0 14px 14px;">
-                                <p style="margin:0; color:#8696a0; font-size:12px; line-height:1.5;">
-                                    Si no creaste esta cuenta, ignorá este mensaje.<br>
-                                    CracksApp · Trabajo Integrador Final · UTN
+                            <td style="background-color:#f7f8fa; padding:22px 32px 28px; text-align:center; border-top:1px solid #e9edef; border-radius:0 0 16px 16px;">
+                                <p style="margin:0; color:#8696a0; font-size:12px; line-height:1.6;">
+                                    Si no creaste esta cuenta, podés ignorar este mensaje.<br>
+                                    <span style="color:#b0bac2;">CracksApp &middot; Trabajo Integrador Final &middot; UTN</span>
                                 </p>
                             </td>
                         </tr>
                     </table>
                 </div>
             `
+
+class MailService {
+    async sendVerificationEmail(email, verification_token) {
+        const verify_url = `${ENVIRONMENT.URL_BACKEND}/api/auth/verify-email?token=${verification_token}`
+        const html = buildVerificationHtml(verify_url)
+
+        // En hostings como Render (plan free) las conexiones SMTP salientes suelen
+        // dar "Connection timeout". Si hay API key de Brevo, enviamos por su API HTTP
+        // (puerto 443, nunca bloqueado). Si no, caemos al SMTP (útil en local).
+        if (ENVIRONMENT.BREVO_API_KEY) {
+            return this.sendViaBrevoApi(email, html)
+        }
+        return this.sendViaSmtp(email, html)
+    }
+
+    async sendViaBrevoApi(email, html) {
+        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+            method: 'POST',
+            headers: {
+                'api-key': ENVIRONMENT.BREVO_API_KEY,
+                'accept': 'application/json',
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify({
+                sender: { name: ENVIRONMENT.MAIL_FROM_NAME, email: ENVIRONMENT.MAIL_FROM },
+                to: [{ email }],
+                subject: SUBJECT,
+                htmlContent: html
+            })
+        })
+
+        if (!response.ok) {
+            const detail = await response.text()
+            throw new Error(`Brevo API respondio ${response.status}: ${detail}`)
+        }
+    }
+
+    async sendViaSmtp(email, html) {
+        await mailer_transport.sendMail({
+            from: `"${ENVIRONMENT.MAIL_FROM_NAME}" <${ENVIRONMENT.MAIL_FROM}>`,
+            to: email,
+            subject: SUBJECT,
+            html
         })
     }
 }

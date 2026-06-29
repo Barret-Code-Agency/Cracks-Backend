@@ -49,6 +49,7 @@ El diseño parte de una idea central: **una conversación es una conversación**
 
 - Registro de usuarios con hash de contraseña (bcrypt) y **verificación obligatoria por email**.
 - Login que devuelve un **JWT con expiración**; las rutas sensibles quedan protegidas por un middleware de autenticación.
+- **Protección contra fuerza bruta** en el login y contra registro masivo, mediante *rate limiting* por IP.
 - **CRUD de Contactos** (entidad principal), con búsqueda de usuarios por nombre o email para agregarlos.
 - **CRUD de Grupos** (entidad relacionada), con miembros, roles (admin / co-admin / member) y control de permisos.
 - **Mensajería** uno a uno y grupal, reutilizando el mismo modelo de conversaciones.
@@ -66,6 +67,7 @@ El diseño parte de una idea central: **una conversación es una conversación**
 | Autenticación | JSON Web Tokens (`jsonwebtoken`) |
 | Hash de contraseñas | `bcrypt` |
 | Envío de emails | `nodemailer` |
+| Rate limiting | `express-rate-limit` |
 | Configuración | `dotenv` |
 | CORS | `cors` |
 
@@ -114,7 +116,7 @@ src/
  ├─ services/       Lógica de negocio
  ├─ controllers/    Manejo de request / response
  ├─ routes/         Routers de Express
- ├─ middleware/     Auth, validación y manejo de errores
+ ├─ middleware/     Auth, validación, rate limiting y manejo de errores
  ├─ utils/          JWT y clase de error
  ├─ seed/           Carga de los 12 cracks
  └─ main.js         Punto de entrada (conexión + servidor)
@@ -222,9 +224,11 @@ El modelo está formado por **6 entidades**. Su diseño parte de un modelo relac
 - **Contraseñas:** nunca se guardan en texto plano. Se hashean con **bcrypt** (12 rondas) antes de persistirlas.
 - **JWT:** el login devuelve un token firmado con expiración configurable. Las rutas protegidas esperan el header `Authorization: Bearer <token>`; el middleware de autenticación lo verifica y expone el usuario en la request.
 - **Verificación por email:** al registrarse se envía un email con un link de activación (`nodemailer`). Hasta que el email no está verificado, el login es rechazado.
+- **Rate limiting (protección contra fuerza bruta):** los endpoints de autenticación están limitados por IP con `express-rate-limit`. El login admite **5 intentos fallidos cada 15 minutos** (un login exitoso no consume cupo, gracias a `skipSuccessfulRequests`, para no penalizar al usuario legítimo) y el registro **5 cuentas por hora** (evita el alta masiva y el spam de emails de verificación). Superado el límite, la API responde `429 Too Many Requests` con la cabecera estándar `Retry-After`. Como el backend corre detrás del proxy de Render, se configura `trust proxy` para identificar la IP real del cliente.
 - **Middlewares obligatorios:**
   - **CORS** — habilita el consumo desde el frontend.
   - **Validación de entrada** — un middleware propio (`validate.middleware.js`) revisa el `body` de cada petición y rechaza con `400` lo que falte o esté mal formado, antes de llegar a la lógica. Se implementó a mano en vez de usar una librería como `express-validator`: el resultado es el mismo (ningún dato inválido llega al controller), con control total del mecanismo y sin sumar dependencias.
+  - **Rate limiting** — `rateLimit.middleware.js` aplica el límite por IP en `/login` y `/register`.
   - **Autenticación JWT** — protege las rutas sensibles.
   - **Manejo centralizado de errores** — un único middleware traduce los errores a respuestas uniformes.
 
@@ -239,6 +243,8 @@ Base local: `http://localhost:3000`
 | POST | `/register` | No | `{ email, password, display_name, phone_number? }` | Registra el usuario y envía el email de verificación |
 | GET | `/verify-email?token=` | No | — | Verifica el email (link del correo) |
 | POST | `/login` | No | `{ email, password }` | Devuelve `{ user, access_token }`; requiere email verificado |
+
+> **Rate limiting:** `/login` permite 5 intentos fallidos por IP cada 15 min y `/register` 5 altas por IP por hora. Al excederlos se responde `429 Too Many Requests`.
 
 ### Usuarios — `/api/users`
 
@@ -346,13 +352,18 @@ La API queda disponible en `http://localhost:3000`.
 | MONGO_URI | Cadena de conexión a MongoDB |
 | JWT_SECRET | Secreto para firmar los tokens |
 | JWT_EXPIRES_IN | Vencimiento del token (ej. `1d`) |
-| GMAIL_USER | Casilla de Gmail para enviar los emails |
-| GMAIL_PASS | App-password de esa casilla |
+| SMTP_HOST | Host del relay SMTP (ej. `smtp-relay.brevo.com`) |
+| SMTP_PORT | Puerto SMTP (ej. `587`) |
+| SMTP_USER | Usuario del relay SMTP |
+| SMTP_PASS | Clave SMTP |
+| BREVO_API_KEY | API key v3 de Brevo para enviar por su API HTTP (recomendado en producción) |
+| MAIL_FROM | Dirección remitente de los emails |
+| MAIL_FROM_NAME | Nombre visible del remitente |
 | URL_BACKEND | URL pública del backend |
 | URL_FRONTEND | URL pública del frontend |
 | GROQ_API_KEY | API key de Groq para generar las respuestas de los cracks (corre en el servidor) |
 
-Si `GMAIL_USER` y `GMAIL_PASS` no están configurados, el envío de emails funciona en modo de desarrollo (no envía correos reales), de modo que se puede probar el flujo completo en local. Del mismo modo, si `GROQ_API_KEY` no está configurada, los cracks responden con frases de respaldo en vez de cortar el chat.
+**Envío de emails.** El backend envía la verificación de cuenta por dos vías: si `BREVO_API_KEY` está configurada, usa la **API HTTP de Brevo** (puerto 443); si no, cae al **SMTP** (`SMTP_*`). En hostings como Render, cuyo plan gratuito suele bloquear el SMTP saliente (errores `Connection timeout`), conviene usar la API HTTP. Si no hay ni API key ni credenciales SMTP, el envío corre en modo de desarrollo (no envía correos reales), de modo que se puede probar el flujo completo en local. Del mismo modo, si `GROQ_API_KEY` no está configurada, los cracks responden con frases de respaldo en vez de cortar el chat.
 
 ## 14. Usuario de prueba
 

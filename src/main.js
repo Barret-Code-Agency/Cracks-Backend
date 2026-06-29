@@ -26,6 +26,10 @@ await connectMongoDB()
 
 const app = express()
 
+// Detras del proxy de Render (1 salto): permite que el rate limit identifique
+// la IP real del cliente via X-Forwarded-For en vez de la IP del proxy.
+app.set('trust proxy', 1)
+
 app.use(cors())
 app.use(express.json({ limit: '5mb' }))
 
