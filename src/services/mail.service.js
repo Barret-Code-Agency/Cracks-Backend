@@ -16,14 +16,8 @@ class MailService {
                             <td style="background-color:#00a884; padding:32px 24px; text-align:center; border-radius:14px 14px 0 0;">
                                 <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto;">
                                     <tr>
-                                        <td style="background-color:#ffffff; border-radius:14px; padding:13px 16px;">
-                                            <table role="presentation" cellpadding="0" cellspacing="0">
-                                                <tr>
-                                                    <td style="padding:0 4px;"><div style="width:12px; height:12px; background-color:#00a884; border-radius:50%; font-size:0; line-height:0;">&nbsp;</div></td>
-                                                    <td style="padding:0 4px;"><div style="width:12px; height:12px; background-color:#00a884; border-radius:50%; font-size:0; line-height:0;">&nbsp;</div></td>
-                                                    <td style="padding:0 4px;"><div style="width:12px; height:12px; background-color:#00a884; border-radius:50%; font-size:0; line-height:0;">&nbsp;</div></td>
-                                                </tr>
-                                            </table>
+                                        <td style="background-color:#ffffff; border-radius:14px; padding:4px 18px 10px; text-align:center;">
+                                            <span style="color:#00a884; font-size:36px; line-height:1; letter-spacing:7px; font-family:Arial,sans-serif;">&#8226;&#8226;&#8226;</span>
                                         </td>
                                     </tr>
                                 </table>
