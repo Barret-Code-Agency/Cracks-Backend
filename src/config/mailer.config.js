@@ -12,6 +12,7 @@ const mailer_transport = hasSmtp
         port: Number(ENVIRONMENT.SMTP_PORT) || 587,
         secure: false,
         auth: { user: ENVIRONMENT.SMTP_USER, pass: ENVIRONMENT.SMTP_PASS },
+        family: 4, // Render no tiene salida IPv6 -> forzar IPv4 en el socket
         // Timeouts para que un SMTP caido no cuelgue el envio indefinidamente
         connectionTimeout: 10000,
         greetingTimeout: 10000,

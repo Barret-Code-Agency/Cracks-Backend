@@ -1,3 +1,4 @@
+import dns from 'node:dns'
 import express from 'express'
 import cors from 'cors'
 import ENVIRONMENT from './config/environment.js'
@@ -16,6 +17,10 @@ import './models/conversation.model.js'
 import './models/message.model.js'
 import './models/group.model.js'
 import './models/conversationParticipant.model.js'
+
+// Render no tiene salida IPv6: forzamos IPv4 para que las conexiones salientes
+// (SMTP de Brevo, etc.) no fallen con ENETUNREACH / Connection timeout.
+dns.setDefaultResultOrder('ipv4first')
 
 await connectMongoDB()
 
