@@ -68,7 +68,9 @@ class ContactService {
         return deleted
     }
 
-    // Al registrarse, el usuario nuevo arranca con los 50 cracks como contactos
+    // Al registrarse, el usuario nuevo arranca con los cracks como contactos
+    // y con un chat ya abierto con cada uno (saludo inicial del crack), para que
+    // entre y vea los chats listos, no solo la agenda de contactos.
     async seedCracksForUser(owner_user_id) {
         const bots = await userRepository.getBots()
         if (!bots.length) {
@@ -79,6 +81,22 @@ class ContactService {
             contact_user_id: bot._id
         }))
         await contactRepository.insertMany(contactos)
+
+        // Un chat con saludo por cada crack (en paralelo). Si alguno falla,
+        // no rompemos el registro.
+        await Promise.all(bots.map(async (bot) => {
+            try {
+                const nombre = (bot.display_name || '').split(' ')[0]
+                const conversation = await conversationService.findOrCreatePrivate(owner_user_id, bot._id)
+                await conversationService.sendMessage(
+                    conversation._id,
+                    bot._id,
+                    `¡Hola! Soy ${nombre}. Gracias por sumarme a tus contactos, escribime cuando quieras. 👋`
+                )
+            } catch (error) {
+                console.error(`No se pudo crear el chat con ${bot.display_name}:`, error.message)
+            }
+        }))
     }
 
     // El usuario nuevo queda conectado con el anfitrion (Fernando), en ambos sentidos,
