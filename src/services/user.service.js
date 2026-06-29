@@ -42,7 +42,11 @@ class UserService {
         }
 
         updates.updated_at = new Date()
-        return await userRepository.updateById(user_id, updates)
+        const updated = await userRepository.updateById(user_id, updates)
+        if (!updated) {
+            throw new ServerError('Tu sesión expiró o la cuenta ya no existe. Volvé a iniciar sesión.', 404)
+        }
+        return updated
     }
 }
 
