@@ -1,7 +1,6 @@
 import ENVIRONMENT from '../config/environment.js'
 import ServerError from '../utils/serverError.js'
-
-const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
+import { EXTERNAL_API } from '../constants/external.constant.js'
 
 // Valida el token de Cloudflare Turnstile (CAPTCHA anti-bot) que el frontend
 // adjunta en el body como captcha_token. Si no hay TURNSTILE_SECRET configurado,
@@ -19,7 +18,7 @@ export const verifyTurnstile = async (request, response, next) => {
 
     let data
     try {
-        const res = await fetch(SITEVERIFY_URL, {
+        const res = await fetch(EXTERNAL_API.TURNSTILE_VERIFY, {
             method: 'POST',
             headers: { 'content-type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({

@@ -1,10 +1,23 @@
 import ConversationParticipant from '../models/conversationParticipant.model.js'
-
-const USER_FIELDS = 'display_name avatar_url email es_bot status_message'
+import { PARTICIPANT_USER_FIELDS } from '../constants/fields.constant.js'
 
 class ParticipantRepository {
     async create(conversation_id, user_id, role) {
         return await ConversationParticipant.create({ conversation_id, user_id, role })
+    }
+
+    // Busca la membresia exista o no este activa (incluye a quienes ya salieron)
+    async findAny(conversation_id, user_id) {
+        return await ConversationParticipant.findOne({ conversation_id, user_id })
+    }
+
+    // Reactiva a un miembro que habia salido (left_at -> null) y le re-asigna rol
+    async reactivate(conversation_id, user_id, role) {
+        return await ConversationParticipant.findOneAndUpdate(
+            { conversation_id, user_id },
+            { left_at: null, role },
+            { new: true }
+        )
     }
 
     async listActiveByUser(user_id) {
@@ -26,7 +39,7 @@ class ParticipantRepository {
     async listByConversation(conversation_id) {
         return await ConversationParticipant
             .find({ conversation_id, left_at: null })
-            .populate('user_id', USER_FIELDS)
+            .populate('user_id', PARTICIPANT_USER_FIELDS)
     }
 
     async softLeave(conversation_id, user_id) {

@@ -2,6 +2,7 @@ import contactRepository from '../repositories/contact.repository.js'
 import userRepository from '../repositories/user.repository.js'
 import conversationService from './conversation.service.js'
 import ServerError from '../utils/serverError.js'
+import { crackGreeting } from '../utils/crackGreeting.js'
 
 // Cuenta del creador de la app: todo usuario nuevo arranca conectado con el
 const HOST_EMAIL = 'fhdelgado.utn@gmail.com'
@@ -86,12 +87,11 @@ class ContactService {
         // no rompemos el registro.
         await Promise.all(bots.map(async (bot) => {
             try {
-                const nombre = (bot.display_name || '').split(' ')[0]
                 const conversation = await conversationService.findOrCreatePrivate(owner_user_id, bot._id)
                 await conversationService.sendMessage(
                     conversation._id,
                     bot._id,
-                    `¡Hola! Soy ${nombre}. Gracias por sumarme a tus contactos, escribime cuando quieras. 👋`
+                    crackGreeting(bot.display_name)
                 )
             } catch (error) {
                 console.error(`No se pudo crear el chat con ${bot.display_name}:`, error.message)

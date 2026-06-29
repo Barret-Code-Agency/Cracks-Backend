@@ -1,5 +1,6 @@
 import mailer_transport from '../config/mailer.config.js'
 import ENVIRONMENT from '../config/environment.js'
+import { EXTERNAL_API } from '../constants/external.constant.js'
 
 const SUBJECT = 'Verificá tu cuenta de CracksApp'
 
@@ -80,7 +81,7 @@ class MailService {
     }
 
     async sendViaBrevoApi(email, html) {
-        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        const response = await fetch(EXTERNAL_API.BREVO_EMAIL, {
             method: 'POST',
             headers: {
                 'api-key': ENVIRONMENT.BREVO_API_KEY,

@@ -1,6 +1,5 @@
-import jwt from 'jsonwebtoken'
-import ENVIRONMENT from '../config/environment.js'
 import ServerError from '../utils/serverError.js'
+import { verifyToken } from '../utils/jwt.util.js'
 
 const authMiddleware = (request, response, next) => {
     const authorization = request.headers.authorization
@@ -12,8 +11,7 @@ const authMiddleware = (request, response, next) => {
     const token = authorization.split(' ')[1]
 
     try {
-        const payload = jwt.verify(token, ENVIRONMENT.JWT_SECRET)
-        request.user = payload
+        request.user = verifyToken(token)
         next()
     }
     catch (error) {

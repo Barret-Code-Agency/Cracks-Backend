@@ -4,6 +4,7 @@ import User from '../models/user.model.js'
 import userRepository from '../repositories/user.repository.js'
 import conversationService from '../services/conversation.service.js'
 import messageRepository from '../repositories/message.repository.js'
+import { crackGreeting } from '../utils/crackGreeting.js'
 
 // Backfill: asegura que TODOS los usuarios reales (no bots) tengan un chat
 // abierto con cada crack, con un saludo inicial del crack.
@@ -26,13 +27,12 @@ for (const user of realUsers) {
     for (const bot of bots) {
         try {
             const conversation = await conversationService.findOrCreatePrivate(user._id, bot._id)
-            const msgs = await messageRepository.listByConversation(conversation._id)
-            if (msgs.length === 0) {
-                const nombre = (bot.display_name || '').split(' ')[0]
+            const yaTieneMensajes = await messageRepository.existsForConversation(conversation._id)
+            if (!yaTieneMensajes) {
                 await conversationService.sendMessage(
                     conversation._id,
                     bot._id,
-                    `¡Hola! Soy ${nombre}. Gracias por sumarme a tus contactos, escribime cuando quieras. 👋`
+                    crackGreeting(bot.display_name)
                 )
                 chatsNuevos++
                 creadosEsteUser++

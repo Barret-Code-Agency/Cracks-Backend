@@ -2,9 +2,11 @@ import conversationRepository from '../repositories/conversation.repository.js'
 import participantRepository from '../repositories/participant.repository.js'
 import messageRepository from '../repositories/message.repository.js'
 import userRepository from '../repositories/user.repository.js'
+import contactRepository from '../repositories/contact.repository.js'
 import aiService from './ai.service.js'
 import ServerError from '../utils/serverError.js'
 import { CONVERSATION_TYPE } from '../constants/conversation.constant.js'
+import { SENDER_FIELDS } from '../constants/fields.constant.js'
 
 class ConversationService {
     // Busca la conversacion privada activa entre dos usuarios (o null si no existe).
@@ -30,6 +32,14 @@ class ConversationService {
         return conversation
     }
 
+    // Lanza si el destinatario tiene bloqueado a quien quiere escribirle.
+    async assertNotBlocked(my_user_id, other_user_id) {
+        const relation = await contactRepository.findByOwnerAndContact(other_user_id, my_user_id)
+        if (relation?.is_blocked) {
+            throw new ServerError('No podés enviarle mensajes a este usuario', 403)
+        }
+    }
+
     // Busca la conversacion privada existente entre dos usuarios, o la crea.
     async findOrCreatePrivate(my_user_id, other_user_id) {
         if (String(my_user_id) === String(other_user_id)) {
@@ -41,14 +51,25 @@ class ConversationService {
             throw new ServerError('Usuario no encontrado', 404)
         }
 
+        // Respeta el bloqueo: si el otro me bloqueó, no se abre el chat.
+        await this.assertNotBlocked(my_user_id, other_user_id)
+
         const existing = await this.findPrivateBetween(my_user_id, other_user_id)
         if (existing) {
             return existing
         }
 
         const conversation = await conversationRepository.create(CONVERSATION_TYPE.PRIVATE)
-        await participantRepository.create(conversation._id, my_user_id)
-        await participantRepository.create(conversation._id, other_user_id)
+        try {
+            await participantRepository.create(conversation._id, my_user_id)
+            await participantRepository.create(conversation._id, other_user_id)
+        } catch (error) {
+            // Rollback manual: si falla la creación de un participante, borramos la
+            // conversación para no dejarla huérfana. No usamos transacción para que
+            // funcione también con MongoDB standalone en desarrollo.
+            await conversationRepository.softDelete(conversation._id)
+            throw error
+        }
         return conversation
     }
 
@@ -77,7 +98,7 @@ class ConversationService {
         // Actualiza updated_at para ordenar la lista de chats (desnormalizacion controlada del modelo)
         await conversationRepository.touch(conversation_id)
 
-        return await message.populate('sender_user_id', 'display_name avatar_url es_bot')
+        return await message.populate('sender_user_id', SENDER_FIELDS)
     }
 
     // Genera (con IA, en el servidor) y persiste la respuesta de un crack en una conversacion privada.
@@ -111,7 +132,7 @@ class ConversationService {
 
         await conversationRepository.touch(conversation_id)
 
-        return await message.populate('sender_user_id', 'display_name avatar_url es_bot')
+        return await message.populate('sender_user_id', SENDER_FIELDS)
     }
 
     async getMessages(conversation_id, user_id) {

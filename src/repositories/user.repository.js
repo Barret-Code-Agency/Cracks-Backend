@@ -34,6 +34,11 @@ class UserRepository {
     async getBots() {
         return await User.find({ es_bot: true, deleted_at: null })
     }
+
+    // Trae en una sola consulta los usuarios activos cuyos ids esten en la lista
+    async getActiveByIds(user_ids) {
+        return await User.find({ _id: { $in: user_ids }, deleted_at: null })
+    }
 }
 
 const userRepository = new UserRepository()

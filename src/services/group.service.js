@@ -38,12 +38,11 @@ class GroupService {
         const unique_member_ids = [...new Set(member_ids || [])].filter(
             (id) => String(id) !== String(creator_id)
         )
-        for (const member_id of unique_member_ids) {
-            const user = await userRepository.getById(member_id)
-            if (user && !user.deleted_at) {
-                await participantRepository.create(conversation._id, member_id, PARTICIPANT_ROLE.MEMBER)
-            }
-        }
+        // Validamos todos los miembros en UNA consulta (en vez de N getById en serie)
+        const valid_members = await userRepository.getActiveByIds(unique_member_ids)
+        await Promise.all(valid_members.map((user) =>
+            participantRepository.create(conversation._id, user._id, PARTICIPANT_ROLE.MEMBER)
+        ))
 
         return await this.getGroup(creator_id, group._id)
     }
@@ -96,12 +95,17 @@ class GroupService {
             throw new ServerError('El usuario que queres agregar no existe', 404)
         }
 
-        const existing = await participantRepository.findActive(group.conversation_id, new_user_id)
-        if (existing) {
+        const existing = await participantRepository.findAny(group.conversation_id, new_user_id)
+        if (existing && !existing.left_at) {
             throw new ServerError('El usuario ya esta en el grupo', 400)
         }
-
-        await participantRepository.create(group.conversation_id, new_user_id, PARTICIPANT_ROLE.MEMBER)
+        if (existing) {
+            // Ya estuvo en el grupo y se fue: lo reactivamos en vez de crear un
+            // duplicado (que rompería el índice único {conversation_id, user_id})
+            await participantRepository.reactivate(group.conversation_id, new_user_id, PARTICIPANT_ROLE.MEMBER)
+        } else {
+            await participantRepository.create(group.conversation_id, new_user_id, PARTICIPANT_ROLE.MEMBER)
+        }
         await conversationRepository.touch(group.conversation_id)
 
         return await this.getGroup(user_id, group_id)

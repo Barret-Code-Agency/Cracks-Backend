@@ -1,6 +1,8 @@
 import ServerError from '../utils/serverError.js'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+// Minimo 8 caracteres, con al menos una letra y un numero
+const PASSWORD_REGEX = /^(?=.*[a-zA-Z])(?=.*\d).{8,}$/
 
 export const validateRegister = (request, response, next) => {
     const { email, password, display_name } = request.body
@@ -8,8 +10,8 @@ export const validateRegister = (request, response, next) => {
     if (!email || !EMAIL_REGEX.test(email)) {
         throw new ServerError('El email es invalido', 400)
     }
-    if (!password || password.length < 6) {
-        throw new ServerError('La contraseña debe tener al menos 6 caracteres', 400)
+    if (!password || !PASSWORD_REGEX.test(password)) {
+        throw new ServerError('La contraseña debe tener al menos 8 caracteres, con letras y números', 400)
     }
     if (!display_name || display_name.trim().length < 2) {
         throw new ServerError('El nombre debe tener al menos 2 caracteres', 400)

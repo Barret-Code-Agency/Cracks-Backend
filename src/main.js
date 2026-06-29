@@ -30,9 +30,21 @@ const app = express()
 // la IP real del cliente via X-Forwarded-For en vez de la IP del proxy.
 app.set('trust proxy', 1)
 
-// exposedHeaders: deja que el frontend lea los headers de rate limit para
-// mostrar el contador de intentos (por defecto CORS no los expone al navegador).
-app.use(cors({ exposedHeaders: ['RateLimit-Limit', 'RateLimit-Remaining', 'RateLimit-Reset', 'Retry-After'] }))
+// CORS: solo se permite el frontend (la URL configurada, los deploys de Vercel
+// y localhost en desarrollo). Las peticiones sin origin (curl, health checks)
+// se dejan pasar. exposedHeaders permite que el front lea los headers de rate
+// limit para el contador de intentos.
+const isAllowedOrigin = (origin) => {
+    if (!origin) return true
+    if (origin === ENVIRONMENT.URL_FRONTEND) return true
+    if (origin.endsWith('.vercel.app')) return true
+    if (origin.startsWith('http://localhost')) return true
+    return false
+}
+app.use(cors({
+    origin: (origin, callback) => callback(null, isAllowedOrigin(origin)),
+    exposedHeaders: ['RateLimit-Limit', 'RateLimit-Remaining', 'RateLimit-Reset', 'Retry-After']
+}))
 app.use(express.json({ limit: '5mb' }))
 
 app.get('/api/health', (request, response) => {
