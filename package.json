@@ -8,7 +8,8 @@
     "dev": "node --watch src/main.js",
     "start": "node src/main.js",
     "seed": "node src/seed/seedCracks.js",
-    "seed:demo": "node src/seed/seedDemo.js"
+    "seed:demo": "node src/seed/seedDemo.js",
+    "backfill:chats": "node src/seed/backfillCrackChats.js"
   },
   "keywords": [],
   "author": "",
