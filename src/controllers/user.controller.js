@@ -9,7 +9,7 @@ class UserController {
             ok: true,
             status: 200,
             message: 'Busqueda de usuarios',
-            data: { users }
+            data: { users: users.map(toPublicUser) }
         })
     }
 
