@@ -125,18 +125,22 @@ class ConversationService {
             myParticipations.map(p => p.conversation_id)
         )
 
-        const result = []
-        for (const conversation of conversations) {
-            const participants = await participantRepository.listByConversation(conversation._id)
-            const last_message = await messageRepository.getLastByConversation(conversation._id)
-            result.push({
+        // Procesamos todas las conversaciones en paralelo (y dentro de cada una,
+        // participantes y ultimo mensaje a la vez) en vez de una por una en serie:
+        // evita el cuello de botella N+1 al armar la lista de chats.
+        const result = await Promise.all(conversations.map(async (conversation) => {
+            const [participants, last_message] = await Promise.all([
+                participantRepository.listByConversation(conversation._id),
+                messageRepository.getLastByConversation(conversation._id)
+            ])
+            return {
                 id: conversation._id,
                 type: conversation.type,
                 updated_at: conversation.updated_at,
                 participants: participants.map(p => p.user_id),
                 last_message
-            })
-        }
+            }
+        }))
         return result
     }
 }
