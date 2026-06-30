@@ -13,7 +13,7 @@ Este repositorio contiene el **backend**: una API REST construida con **Node.js 
 - **API (backend):** https://cracks-backend.onrender.com
 - **Usuario de prueba** (email ya verificado): `cracks.tp.utn@gmail.com` · contraseña `Cracks2026!`
 
-Iniciá sesión con el usuario de prueba y vas a encontrar los 12 cracks y un chat de bienvenida. También podés registrarte con tu propio email: recibís el correo de verificación y, al entrar, ya quedás conectado para chatear. El backend usa el plan gratuito de Render, por lo que la primera petición tras un rato de inactividad puede demorar ~30-50 s en "despertar".
+Al entrar —con el usuario de prueba o con tu propia cuenta— vas a ver a todos los usuarios y los 12 cracks, cada uno con un chat de bienvenida. También podés registrarte con tu propio email: recibís el correo de verificación y, al entrar, ya quedás conectado para chatear con cualquiera. El backend usa el plan gratuito de Render, por lo que la primera petición tras un rato de inactividad puede demorar ~30-50 s en "despertar".
 
 ![Chat en vivo entre dos usuarios reales](docs/chat-demo.png)
 
@@ -55,10 +55,10 @@ El diseño parte de una idea central: **una conversación es una conversación**
 - Login que devuelve un **JWT con expiración**; las rutas sensibles quedan protegidas por un middleware de autenticación.
 - **Protección contra fuerza bruta** en el login y contra registro masivo, mediante *rate limiting* por IP.
 - **CAPTCHA (Cloudflare Turnstile)** en el registro para frenar bots automatizados.
-- **CRUD de Contactos** (entidad principal), con búsqueda de usuarios por nombre o email para agregarlos.
+- **Espacio de trabajo / directorio de usuarios:** al entrar, cada usuario ve a todos los demás (compañeros y los 12 cracks) y puede chatear con cualquiera sin tener que agregarlo. El **CRUD de Contactos** (agregar, alias, favoritos, bloqueo) sigue disponible en la API como entidad del modelo.
 - **CRUD de Grupos** (entidad relacionada), con **alta y baja de miembros en grupos ya creados**, roles (admin / co-admin / member) y control de permisos.
 - **Mensajería** uno a uno y grupal, reutilizando el mismo modelo de conversaciones.
-- **12 cracks precargados** como usuarios bot, buscables y agregables como contacto.
+- **12 cracks precargados** como usuarios bot, visibles para todos; cada usuario nuevo arranca con un **chat de bienvenida** con cada crack.
 - Arquitectura en capas, validación de entrada, manejo centralizado de errores y respuestas con formato uniforme.
 
 ## 3. Stack tecnológico
@@ -230,7 +230,7 @@ El modelo está formado por **6 entidades**. Su diseño parte de un modelo relac
 - **Contraseñas:** nunca se guardan en texto plano. Se hashean con **bcrypt** (12 rondas) antes de persistirlas.
 - **JWT:** el login devuelve un token firmado con expiración configurable. Las rutas protegidas esperan el header `Authorization: Bearer <token>`; el middleware de autenticación lo verifica y expone el usuario en la request.
 - **Verificación por email:** al registrarse se envía un email con un link de activación (`nodemailer`). Hasta que el email no está verificado, el login es rechazado.
-- **Rate limiting (protección contra fuerza bruta):** los endpoints de autenticación están limitados por IP con `express-rate-limit`. El login admite **5 intentos fallidos cada 15 minutos** (un login exitoso no consume cupo, gracias a `skipSuccessfulRequests`, para no penalizar al usuario legítimo) y el registro **5 cuentas por hora** (evita el alta masiva y el spam de emails de verificación). Superado el límite, la API responde `429 Too Many Requests` con la cabecera estándar `Retry-After`. Como el backend corre detrás del proxy de Render, se configura `trust proxy` para identificar la IP real del cliente.
+- **Rate limiting (protección contra fuerza bruta):** los endpoints de autenticación están limitados por IP con `express-rate-limit`. El login admite **10 intentos fallidos cada 15 minutos** (un login exitoso no consume cupo, gracias a `skipSuccessfulRequests`, para no penalizar al usuario legítimo) y el registro **5 cuentas por hora** (evita el alta masiva y el spam de emails de verificación). Superado el límite, la API responde `429 Too Many Requests` con la cabecera estándar `Retry-After`. Como el backend corre detrás del proxy de Render, se configura `trust proxy` para identificar la IP real del cliente.
 - **Middlewares obligatorios:**
   - **CORS** — habilita el consumo desde el frontend.
   - **Validación de entrada** — un middleware propio (`validate.middleware.js`) revisa el `body` de cada petición y rechaza con `400` lo que falte o esté mal formado, antes de llegar a la lógica. Se implementó a mano en vez de usar una librería como `express-validator`: el resultado es el mismo (ningún dato inválido llega al controller), con control total del mecanismo y sin sumar dependencias.
@@ -251,7 +251,7 @@ Base local: `http://localhost:3000`
 | GET | `/verify-email?token=` | No | — | Verifica el email (link del correo) |
 | POST | `/login` | No | `{ email, password }` | Devuelve `{ user, access_token }`; requiere email verificado |
 
-> **Rate limiting:** `/login` permite 5 intentos fallidos por IP cada 15 min y `/register` 5 altas por IP por hora. Al excederlos se responde `429 Too Many Requests`.
+> **Rate limiting:** `/login` permite 10 intentos fallidos por IP cada 15 min y `/register` 5 altas por IP por hora. Al excederlos se responde `429 Too Many Requests`.
 
 ### Usuarios — `/api/users`
 
@@ -264,7 +264,7 @@ Base local: `http://localhost:3000`
 | Método | Ruta | Auth | Body | Descripción |
 |---|---|---|---|---|
 | POST | `/` | Sí | `{ contact_user_id, alias? }` | Agrega un contacto |
-| GET | `/` | Sí | — | Lista mis contactos (favoritos primero) |
+| GET | `/` | Sí | — | Directorio: todos los usuarios (compañeros + cracks) para chatear |
 | GET | `/:contact_id` | Sí | — | Detalle de un contacto |
 | PUT | `/:contact_id` | Sí | `{ alias?, is_blocked?, is_favorite? }` | Edita un contacto |
 | DELETE | `/:contact_id` | Sí | — | Elimina un contacto |
@@ -328,7 +328,7 @@ El proyecto incluye un seed que carga a los 12 deportistas como usuarios `es_bot
 npm run seed
 ```
 
-El seed es **idempotente**: identifica a cada crack por su email (`crackNNN@cracks.bot`), de modo que correrlo varias veces no genera duplicados. Una vez cargados, los cracks aparecen en la búsqueda de usuarios y pueden agregarse como contacto igual que cualquier otra persona.
+El seed es **idempotente**: identifica a cada crack por su email (`crackNNN@cracks.bot`), de modo que correrlo varias veces no genera duplicados. Una vez cargados, los cracks quedan visibles para todos los usuarios y listos para chatear.
 
 ## 12. Instalación y ejecución
 
@@ -381,7 +381,7 @@ Cuenta de prueba con el **email ya verificado**, lista para usar en la app despl
 |---|---|
 | `cracks.tp.utn@gmail.com` | `Cracks2026!` |
 
-Al iniciar sesión con ella ya aparecen los 12 cracks y un chat de bienvenida. Cualquier persona también puede **registrarse con su propio email**: recibe el correo de verificación, lo confirma y al entrar queda conectada para poder chatear.
+Al iniciar sesión ya aparecen todos los usuarios y los 12 cracks, cada uno con un chat de bienvenida — esto vale para cualquier cuenta, no solo la de prueba. Cualquier persona también puede **registrarse con su propio email**: recibe el correo de verificación, lo confirma y al entrar queda conectada para poder chatear con todos.
 
 ## 15. Despliegue
 
@@ -413,7 +413,7 @@ El frontend (React + Vite) sigue buenas prácticas de maquetación y accesibilid
 - **Nombres de clases descriptivos:** convención BEM (`add-panel__result-name`, `cw__bubble--me`), evitando nombres genéricos que dificulten el mantenimiento.
 - **Sin valores hardcodeados:** colores, espaciados y radios provienen de tokens CSS (`var(--...)`) definidos en un único lugar, garantizando contraste y coherencia entre los temas claro y oscuro.
 
-**Alcance de la interfaz.** Con el fin de reproducir fielmente la experiencia de WhatsApp Web, la interfaz incorpora algunas secciones de carácter ilustrativo —Estados, Canales, Comunidades, Multimedia y la pantalla de vinculación por QR—. Estas reproducen la estética de la aplicación original a modo de maqueta y no se conectan con la API. Las funcionalidades centrales del Trabajo Integrador —registro con verificación por email, inicio de sesión, gestión de contactos, mensajería privada y grupal, y las respuestas de los cracks generadas por IA— están todas respaldadas por este backend.
+**Alcance de la interfaz.** Con el fin de reproducir fielmente la experiencia de WhatsApp Web, la interfaz incorpora algunas secciones de carácter ilustrativo —Estados, Canales, Comunidades, Multimedia y la pantalla de vinculación por QR—. Estas reproducen la estética de la aplicación original a modo de maqueta y no se conectan con la API. Las funcionalidades centrales del Trabajo Integrador —registro con verificación por email, inicio de sesión, directorio de usuarios (todos se ven y chatean entre sí), mensajería privada y grupal con creación de grupos y gestión de miembros, y las respuestas de los cracks generadas por IA— están todas respaldadas por este backend.
 
 **Actualización de los mensajes.** El frontend refresca cada chat abierto mediante *polling*: consulta `GET /api/conversations/:id/messages` cada 4 segundos. Es una solución simple y suficiente para el alcance del trabajo; la evolución natural sería usar **WebSockets** para tiempo real (el servidor empuja los mensajes en lugar de que el cliente los pida), a cambio de mayor complejidad de infraestructura.
 
