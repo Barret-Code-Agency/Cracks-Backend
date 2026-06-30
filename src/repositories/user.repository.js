@@ -32,12 +32,20 @@ class UserRepository {
     }
 
     async getBots() {
-        return await User.find({ es_bot: true, deleted_at: null })
+        return await User.find({ es_bot: true, deleted_at: null }).select(PUBLIC_FIELDS)
     }
 
     // Trae en una sola consulta los usuarios activos cuyos ids esten en la lista
     async getActiveByIds(user_ids) {
-        return await User.find({ _id: { $in: user_ids }, deleted_at: null })
+        return await User.find({ _id: { $in: user_ids }, deleted_at: null }).select(PUBLIC_FIELDS)
+    }
+
+    // Todos los usuarios reales (no bots) activos, excepto uno. Para el directorio
+    // del "espacio de trabajo": cada usuario ve a todos los demás. Sin password_hash.
+    async getAllRealExcept(user_id) {
+        return await User
+            .find({ es_bot: { $ne: true }, deleted_at: null, _id: { $ne: user_id } })
+            .select(PUBLIC_FIELDS)
     }
 }
 

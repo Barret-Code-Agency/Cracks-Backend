@@ -33,7 +33,21 @@ class ContactService {
     }
 
     async listContacts(owner_user_id) {
-        return await contactRepository.listByOwner(owner_user_id)
+        // Modo "espacio de trabajo": todos los usuarios se ven entre sí. Devolvemos
+        // el directorio completo (cracks + usuarios reales) en lugar de solo los
+        // contactos agregados manualmente. Se arma con la misma forma que una fila
+        // de contacts para no tocar el frontend.
+        const [bots, reales] = await Promise.all([
+            userRepository.getBots(),
+            userRepository.getAllRealExcept(owner_user_id)
+        ])
+        return [...reales, ...bots].map((user) => ({
+            _id: user._id,
+            contact_user_id: user,
+            alias: null,
+            is_favorite: false,
+            is_blocked: false
+        }))
     }
 
     async getContact(owner_user_id, contact_id) {
