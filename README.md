@@ -15,6 +15,10 @@ Este repositorio contiene el **backend**: una API REST construida con **Node.js 
 
 Iniciá sesión con el usuario de prueba y vas a encontrar los 12 cracks y un chat de bienvenida. También podés registrarte con tu propio email: recibís el correo de verificación y, al entrar, ya quedás conectado para chatear. El backend usa el plan gratuito de Render, por lo que la primera petición tras un rato de inactividad puede demorar ~30-50 s en "despertar".
 
+![Chat en vivo entre dos usuarios reales](docs/chat-demo.png)
+
+*Conversación en tiempo real entre dos usuarios de la app: mensajería 1 a 1, persistida en MongoDB.*
+
 ---
 
 ## Índice
