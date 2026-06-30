@@ -52,7 +52,7 @@ El diseño parte de una idea central: **una conversación es una conversación**
 - **Protección contra fuerza bruta** en el login y contra registro masivo, mediante *rate limiting* por IP.
 - **CAPTCHA (Cloudflare Turnstile)** en el registro para frenar bots automatizados.
 - **CRUD de Contactos** (entidad principal), con búsqueda de usuarios por nombre o email para agregarlos.
-- **CRUD de Grupos** (entidad relacionada), con miembros, roles (admin / co-admin / member) y control de permisos.
+- **CRUD de Grupos** (entidad relacionada), con **alta y baja de miembros en grupos ya creados**, roles (admin / co-admin / member) y control de permisos.
 - **Mensajería** uno a uno y grupal, reutilizando el mismo modelo de conversaciones.
 - **12 cracks precargados** como usuarios bot, buscables y agregables como contacto.
 - Arquitectura en capas, validación de entrada, manejo centralizado de errores y respuestas con formato uniforme.
