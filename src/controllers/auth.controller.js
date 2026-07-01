@@ -53,6 +53,34 @@ class AuthController {
             data: { access_token, user: toPublicUser(user) }
         })
     }
+
+    async forgotPassword(request, response) {
+        const reset_token = await authService.forgotPassword(request.body.email)
+        const data = {}
+
+        // En desarrollo devolvemos el link para poder probar el flujo sin una
+        // casilla de correo real. En produccion nunca se expone.
+        if (ENVIRONMENT.MODE === 'development' && reset_token) {
+            data.reset_url = `${ENVIRONMENT.URL_FRONTEND}/reset-password?token=${reset_token}`
+        }
+
+        // Respuesta generica: no revelamos si el email estaba registrado o no.
+        return response.status(200).json({
+            ok: true,
+            status: 200,
+            message: 'Si el email esta registrado, te enviamos un enlace para restablecer la contraseña.',
+            data
+        })
+    }
+
+    async resetPassword(request, response) {
+        await authService.resetPassword(request.body.token, request.body.password)
+        return response.status(200).json({
+            ok: true,
+            status: 200,
+            message: 'Contraseña actualizada. Ya podés iniciar sesión.'
+        })
+    }
 }
 
 const authController = new AuthController()

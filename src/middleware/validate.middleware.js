@@ -45,6 +45,29 @@ export const validateObjectId = (param) => (request, response, next) => {
     next()
 }
 
+export const validateForgotPassword = (request, response, next) => {
+    const { email } = request.body
+
+    if (!email || !EMAIL_REGEX.test(email)) {
+        throw new ServerError('El email es invalido', 400)
+    }
+
+    next()
+}
+
+export const validateResetPassword = (request, response, next) => {
+    const { token, password } = request.body
+
+    if (!token) {
+        throw new ServerError('Falta el token de recuperacion', 400)
+    }
+    if (!password || !PASSWORD_REGEX.test(password)) {
+        throw new ServerError('La contraseña debe tener al menos 8 caracteres, con letras y números', 400)
+    }
+
+    next()
+}
+
 export const validatePrivateConversation = (request, response, next) => {
     if (!request.body.user_id) {
         throw new ServerError('Falta el user_id del destinatario', 400)

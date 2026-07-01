@@ -4,6 +4,10 @@ import { rateLimit, ipKeyGenerator } from 'express-rate-limit'
 // (normalizada con el helper para que IPv6 no evada el limite).
 const userOrIpKey = (request) => request.user?.user_id ?? ipKeyGenerator(request.ip)
 
+// Desactiva los limites cuando corren los tests (todos comparten la misma IP y
+// agotarian el cupo). En produccion NODE_ENV no es 'test', asi que no afecta.
+const skipInTest = () => process.env.NODE_ENV === 'test'
+
 // Devuelve la respuesta de "demasiadas peticiones" con el mismo formato
 // que el resto de la API ({ ok, status, message }) en vez del texto plano
 // por defecto de express-rate-limit.
@@ -22,6 +26,7 @@ export const loginLimiter = rateLimit({
     limit: 10,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: skipInTest,
     skipSuccessfulRequests: true,
     handler: buildHandler('Demasiados intentos de inicio de sesion. Espera 15 minutos e intenta de nuevo.')
 })
@@ -33,7 +38,19 @@ export const registerLimiter = rateLimit({
     limit: 5,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: skipInTest,
     handler: buildHandler('Demasiados registros desde esta red. Intenta de nuevo en una hora.')
+})
+
+// Recuperacion de contraseña: evita el envio masivo de emails de reset.
+// 5 pedidos por IP cada hora.
+export const passwordResetLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    limit: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: skipInTest,
+    handler: buildHandler('Demasiados pedidos de recuperacion. Intenta de nuevo en una hora.')
 })
 
 // Envio de mensajes: frena el flooding en las conversaciones.
@@ -44,6 +61,7 @@ export const messageLimiter = rateLimit({
     limit: 30,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: skipInTest,
     keyGenerator: userOrIpKey,
     handler: buildHandler('Estas enviando mensajes muy rapido. Espera unos segundos.')
 })
@@ -55,6 +73,7 @@ export const botReplyLimiter = rateLimit({
     limit: 15,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: skipInTest,
     keyGenerator: userOrIpKey,
     handler: buildHandler('El crack necesita un respiro. Espera unos segundos antes de seguir.')
 })
