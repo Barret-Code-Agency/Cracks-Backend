@@ -4,7 +4,8 @@
   "description": "",
   "main": "src/main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "dev": "node --watch src/main.js",
     "start": "node src/main.js",
     "seed": "node src/seed/seedCracks.js",
@@ -24,5 +25,11 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.7.0",
     "nodemailer": "^9.0.1"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "jest": "^30.4.2",
+    "mongodb-memory-server": "^11.2.0",
+    "supertest": "^7.2.2"
   }
 }
