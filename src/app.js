@@ -7,6 +7,7 @@ import userRouter from './routes/user.router.js'
 import contactRouter from './routes/contact.router.js'
 import groupRouter from './routes/group.router.js'
 import conversationRouter from './routes/conversation.router.js'
+import statusRouter from './routes/status.router.js'
 
 // Registramos los modelos en mongoose
 import './models/user.model.js'
@@ -15,6 +16,7 @@ import './models/conversation.model.js'
 import './models/message.model.js'
 import './models/group.model.js'
 import './models/conversationParticipant.model.js'
+import './models/status.model.js'
 
 // Arma la aplicacion Express (sin conectar a Mongo ni escuchar un puerto).
 // Separado de main.js para poder montarla en los tests con Supertest.
@@ -50,6 +52,7 @@ app.use('/api/users', userRouter)
 app.use('/api/contacts', contactRouter)
 app.use('/api/groups', groupRouter)
 app.use('/api/conversations', conversationRouter)
+app.use('/api/status', statusRouter)
 
 // Manejo centralizado de errores (siempre al final)
 app.use(errorMiddleware)

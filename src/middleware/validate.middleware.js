@@ -86,6 +86,16 @@ export const validateMessage = (request, response, next) => {
     next()
 }
 
+export const validateStatus = (request, response, next) => {
+    const { content } = request.body
+
+    if (!content || content.trim().length === 0) {
+        throw new ServerError('El estado no puede estar vacio', 400)
+    }
+
+    next()
+}
+
 export const validateContact = (request, response, next) => {
     if (!request.body.contact_user_id) {
         throw new ServerError('Falta el contact_user_id', 400)
