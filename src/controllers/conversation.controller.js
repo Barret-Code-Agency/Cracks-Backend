@@ -55,13 +55,43 @@ class ConversationController {
     async getMessages(request, response) {
         const messages = await conversationService.getMessages(
             request.params.conversation_id,
-            request.user.user_id
+            request.user.user_id,
+            { limit: request.query.limit, before: request.query.before }
         )
         return response.status(200).json({
             ok: true,
             status: 200,
             message: 'Mensajes obtenidos',
             data: { messages }
+        })
+    }
+
+    async editMessage(request, response) {
+        const message = await conversationService.editMessage(
+            request.params.conversation_id,
+            request.params.message_id,
+            request.user.user_id,
+            request.body.content
+        )
+        return response.status(200).json({
+            ok: true,
+            status: 200,
+            message: 'Mensaje editado',
+            data: { message }
+        })
+    }
+
+    async deleteMessage(request, response) {
+        const message_id = await conversationService.deleteMessage(
+            request.params.conversation_id,
+            request.params.message_id,
+            request.user.user_id
+        )
+        return response.status(200).json({
+            ok: true,
+            status: 200,
+            message: 'Mensaje eliminado',
+            data: { message_id }
         })
     }
 }

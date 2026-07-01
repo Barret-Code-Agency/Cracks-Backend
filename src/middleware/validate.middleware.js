@@ -1,3 +1,4 @@
+import mongoose from 'mongoose'
 import ServerError from '../utils/serverError.js'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -28,6 +29,17 @@ export const validateLogin = (request, response, next) => {
     }
     if (!password) {
         throw new ServerError('La contraseña es obligatoria', 400)
+    }
+
+    next()
+}
+
+// Valida que un parametro de ruta sea un ObjectId de MongoDB.
+// Evita el 500 que tira Mongoose al castear ids con formato invalido:
+// devuelve un 400 claro antes de tocar la base.
+export const validateObjectId = (param) => (request, response, next) => {
+    if (!mongoose.isValidObjectId(request.params[param])) {
+        throw new ServerError('El identificador no es valido', 400)
     }
 
     next()

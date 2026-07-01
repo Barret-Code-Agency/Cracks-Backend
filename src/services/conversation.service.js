@@ -135,9 +135,38 @@ class ConversationService {
         return await message.populate('sender_user_id', SENDER_FIELDS)
     }
 
-    async getMessages(conversation_id, user_id) {
+    async getMessages(conversation_id, user_id, { limit, before } = {}) {
         await this.assertParticipant(conversation_id, user_id)
-        return await messageRepository.listByConversation(conversation_id)
+        return await messageRepository.listByConversation(conversation_id, { limit, before })
+    }
+
+    // Recupera un mensaje activo de la conversacion y valida que sea del autor.
+    // Centraliza los chequeos que comparten editar y borrar.
+    async assertOwnMessage(conversation_id, message_id, user_id) {
+        const message = await messageRepository.getById(message_id)
+        const belongs = message
+            && !message.deleted_at
+            && String(message.conversation_id) === String(conversation_id)
+        if (!belongs) {
+            throw new ServerError('Mensaje no encontrado', 404)
+        }
+        if (String(message.sender_user_id) !== String(user_id)) {
+            throw new ServerError('Solo podes modificar tus propios mensajes', 403)
+        }
+        return message
+    }
+
+    async editMessage(conversation_id, message_id, user_id, content) {
+        await this.assertParticipant(conversation_id, user_id)
+        await this.assertOwnMessage(conversation_id, message_id, user_id)
+        return await messageRepository.updateContent(message_id, content)
+    }
+
+    async deleteMessage(conversation_id, message_id, user_id) {
+        await this.assertParticipant(conversation_id, user_id)
+        await this.assertOwnMessage(conversation_id, message_id, user_id)
+        await messageRepository.softDelete(message_id)
+        return message_id
     }
 
     async listMyConversations(user_id) {
