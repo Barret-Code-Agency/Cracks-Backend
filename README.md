@@ -40,6 +40,7 @@ Al entrar —con el usuario de prueba o con tu propia cuenta— vas a ver a todo
 15. Despliegue
 16. Sobre el modelo de datos
 17. Frontend — buenas prácticas y accesibilidad
+18. Testing
 
 ---
 
@@ -53,6 +54,7 @@ El diseño parte de una idea central: **una conversación es una conversación**
 
 - Registro de usuarios con hash de contraseña (bcrypt) y **verificación obligatoria por email**.
 - Login que devuelve un **JWT con expiración**; las rutas sensibles quedan protegidas por un middleware de autenticación.
+- **Recuperación de contraseña** por email, con un link de **un solo uso** (el token se invalida en cuanto se usa).
 - **Protección contra fuerza bruta** en el login y contra registro masivo, y **límite de flood** en el envío de mensajes y en las respuestas de IA, mediante *rate limiting*.
 - **CAPTCHA (Cloudflare Turnstile)** en el registro para frenar bots automatizados.
 - **Espacio de trabajo / directorio de usuarios:** al entrar, cada usuario ve a todos los demás (compañeros y los 12 cracks) y puede chatear con cualquiera sin tener que agregarlo. El **CRUD de Contactos** (agregar, alias, favoritos, bloqueo) sigue disponible en la API como entidad del modelo.
@@ -60,6 +62,7 @@ El diseño parte de una idea central: **una conversación es una conversación**
 - **Mensajería** uno a uno y grupal, reutilizando el mismo modelo de conversaciones, con **edición y borrado** de mensajes (borrado lógico) y **paginación** para traer el historial por tramos.
 - **12 cracks precargados** como usuarios bot, visibles para todos; cada usuario nuevo arranca con un **chat de bienvenida** con cada crack.
 - Arquitectura en capas, validación de entrada, manejo centralizado de errores y respuestas con formato uniforme.
+- **Tests automatizados** (Jest + Supertest) sobre una base MongoDB en memoria: cubren autenticación, recuperación de contraseña y mensajería.
 
 ## 3. Stack tecnológico
 
@@ -76,6 +79,7 @@ El diseño parte de una idea central: **una conversación es una conversación**
 | CAPTCHA | Cloudflare Turnstile |
 | Configuración | `dotenv` |
 | CORS | `cors` |
+| Testing | Jest · Supertest · mongodb-memory-server |
 
 ## 4. Arquitectura
 
@@ -230,6 +234,7 @@ El modelo está formado por **6 entidades**. Su diseño parte de un modelo relac
 - **Contraseñas:** nunca se guardan en texto plano. Se hashean con **bcrypt** (12 rondas) antes de persistirlas.
 - **JWT:** el login devuelve un token firmado con expiración configurable. Las rutas protegidas esperan el header `Authorization: Bearer <token>`; el middleware de autenticación lo verifica y expone el usuario en la request.
 - **Verificación por email:** al registrarse se envía un email con un link de activación (`nodemailer`). Hasta que el email no está verificado, el login es rechazado.
+- **Recuperación de contraseña:** el flujo `forgot-password` / `reset-password` envía un link por email cuyo token dura 30 minutos. El token se firma con un secreto derivado del **hash actual de la contraseña**, así queda invalidado en cuanto la contraseña cambia: el link es de **un solo uso** sin necesidad de guardar nada en la base. Además, `forgot-password` responde siempre igual —exista o no el email— para no revelar qué cuentas están registradas (*anti user-enumeration*).
 - **Rate limiting (protección contra fuerza bruta y flood):** se aplica con `express-rate-limit`. Los endpoints de autenticación se limitan por IP: el login admite **10 intentos fallidos cada 15 minutos** (un login exitoso no consume cupo, gracias a `skipSuccessfulRequests`, para no penalizar al usuario legítimo) y el registro **5 cuentas por hora** (evita el alta masiva y el spam de emails de verificación). El envío de mensajes se limita a **30 por minuto** y la respuesta de los cracks (que consume la API de Groq) a **15 por minuto**; estos dos se cuentan **por usuario autenticado** —no por IP— para no penalizar a varias personas detrás de la misma red. Superado el límite, la API responde `429 Too Many Requests` con la cabecera estándar `Retry-After`. Como el backend corre detrás del proxy de Render, se configura `trust proxy` para identificar la IP real del cliente.
 - **Middlewares obligatorios:**
   - **CORS** — habilita el consumo desde el frontend.
@@ -250,8 +255,10 @@ Base local: `http://localhost:3000`
 | POST | `/register` | No | `{ email, password, display_name, phone_number? }` | Registra el usuario y envía el email de verificación |
 | GET | `/verify-email?token=` | No | — | Verifica el email (link del correo) |
 | POST | `/login` | No | `{ email, password }` | Devuelve `{ user, access_token }`; requiere email verificado |
+| POST | `/forgot-password` | No | `{ email }` | Envía el email con el link de recuperación. Responde siempre igual (exista o no el email) |
+| POST | `/reset-password` | No | `{ token, password }` | Fija la nueva contraseña con el token del email (un solo uso, expira en 30 min) |
 
-> **Rate limiting:** `/login` permite 10 intentos fallidos por IP cada 15 min y `/register` 5 altas por IP por hora. Al excederlos se responde `429 Too Many Requests`.
+> **Rate limiting:** `/login` permite 10 intentos fallidos por IP cada 15 min, y `/register` y `/forgot-password` 5 pedidos por IP por hora cada uno. Al excederlos se responde `429 Too Many Requests`.
 
 ### Usuarios — `/api/users`
 
@@ -422,6 +429,26 @@ El frontend (React + Vite) sigue buenas prácticas de maquetación y accesibilid
 **Alcance de la interfaz.** Con el fin de reproducir fielmente la experiencia de WhatsApp Web, la interfaz incorpora algunas secciones de carácter ilustrativo —Estados, Canales, Comunidades, Multimedia y la pantalla de vinculación por QR—. Estas reproducen la estética de la aplicación original a modo de maqueta y no se conectan con la API. Las funcionalidades centrales del Trabajo Integrador —registro con verificación por email, inicio de sesión, directorio de usuarios (todos se ven y chatean entre sí), mensajería privada y grupal con creación de grupos y gestión de miembros, y las respuestas de los cracks generadas por IA— están todas respaldadas por este backend.
 
 **Actualización de los mensajes.** El frontend refresca cada chat abierto mediante *polling*: consulta `GET /api/conversations/:id/messages` cada 4 segundos. Es una solución simple y suficiente para el alcance del trabajo; la evolución natural sería usar **WebSockets** para tiempo real (el servidor empuja los mensajes en lugar de que el cliente los pida), a cambio de mayor complejidad de infraestructura.
+
+## 18. Testing
+
+El backend incluye una batería de **tests automatizados** que ejercitan la API de punta a punta (petición HTTP → lógica → base de datos), con **Jest** como *runner* y **Supertest** para disparar las peticiones. La base de datos es una **MongoDB en memoria** (`mongodb-memory-server`): real de verdad, pero efímera y aislada, de modo que los tests no dependen de una base externa ni ensucian datos.
+
+Para no pisarse entre sí, cada test corre sobre una base limpia (se vacían las colecciones entre casos), y los *rate limiters* se desactivan bajo `NODE_ENV=test` (en producción siguen activos).
+
+Qué se cubre:
+
+- **Autenticación** — registro (alta correcta, sin exponer nunca el `password_hash`, rechazo de email/contraseña inválidos y de emails duplicados) y login (credenciales incorrectas → `401`, cuenta sin verificar → `403`, login válido → token).
+- **Recuperación de contraseña** — respuesta genérica ante emails inexistentes, flujo completo *forgot → reset → login* con la nueva clave, y verificación de que el token es de **un solo uso**.
+- **Mensajería** — envío por un participante (`201`) y rechazo de un tercero ajeno (`403`), validación de mensaje vacío e id con formato inválido (`400`), acceso sin token (`401`), paginación (`?limit`), y edición/borrado (solo el autor; `403` para el resto).
+
+Para correr la batería:
+
+```
+npm test
+```
+
+Arranca la base en memoria, ejecuta todas las suites y reporta el resultado.
 
 ---
 
