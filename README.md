@@ -60,6 +60,7 @@ El diseño parte de una idea central: **una conversación es una conversación**
 - **Espacio de trabajo / directorio de usuarios:** al entrar, cada usuario ve a todos los demás (compañeros y los 12 cracks) y puede chatear con cualquiera sin tener que agregarlo. El **CRUD de Contactos** (agregar, alias, favoritos, bloqueo) sigue disponible en la API como entidad del modelo.
 - **CRUD de Grupos** (entidad relacionada), con **alta y baja de miembros en grupos ya creados**, roles (admin / co-admin / member) y control de permisos.
 - **Mensajería** uno a uno y grupal, reutilizando el mismo modelo de conversaciones, con **edición y borrado** de mensajes (borrado lógico) y **paginación** para traer el historial por tramos.
+- **Estados (historias)** de texto o imagen que **expiran solos a las 24 h** mediante un *índice TTL* de MongoDB: cada usuario publica sus estados y ve los vigentes de los demás.
 - **12 cracks precargados** como usuarios bot, visibles para todos; cada usuario nuevo arranca con un **chat de bienvenida** con cada crack.
 - Arquitectura en capas, validación de entrada, manejo centralizado de errores y respuestas con formato uniforme.
 - **Tests automatizados** (Jest + Supertest) sobre una base MongoDB en memoria: cubren autenticación, recuperación de contraseña y mensajería.
@@ -134,7 +135,7 @@ src/
 
 ## 6. Modelo de datos
 
-El modelo está formado por **6 entidades**. Su diseño parte de un modelo relacional y se adapta a MongoDB usando referencias (`ObjectId` + `ref`) y `populate`.
+El modelo está formado por **6 entidades** (más `status`, sumada para la funcionalidad de Estados). Su diseño parte de un modelo relacional y se adapta a MongoDB usando referencias (`ObjectId` + `ref`) y `populate`.
 
 - **users** — Las cuentas. Incluye dos extensiones propias de Cracks: `es_bot` (marca a los 12 deportistas) y `email_verificado` (verificación obligatoria del TP).
 - **contacts** — La agenda de cada usuario. Relación N:M autorreferenciada y **direccional**: que A tenga a B no implica que B tenga a A. Único por par `(owner, contact)`.
@@ -142,6 +143,7 @@ El modelo está formado por **6 entidades**. Su diseño parte de un modelo relac
 - **groups** — Extiende a `conversations` (relación 1:1) con los datos propios de un grupo: nombre, descripción, avatar y creador.
 - **conversation_participants** — La membresía: qué usuario participa de qué conversación y con qué `role`. Un privado tiene 2 filas; un grupo, N. El rol pertenece a la membresía, no al usuario.
 - **messages** — Todos los mensajes, de privados y de grupos, referenciando a `conversations`. Soporta hilos mediante `reply_to_message_id` (autorreferencia).
+- **status** — Los estados (historias) de cada usuario. Guarda un `expires_at` con un **índice TTL**: MongoDB elimina el documento automáticamente al vencer (24 h), sin cron ni limpieza manual.
 
 **Relaciones principales:**
 
@@ -229,6 +231,19 @@ El modelo está formado por **6 entidades**. Su diseño parte de un modelo relac
 
 Índice `(conversation_id, sent_at desc)` para traer los últimos mensajes.
 
+### status
+
+| Campo | Tipo | Notas |
+|---|---|---|
+| user_id | ObjectId → User | Requerido (autor del estado) |
+| content | String | Requerido (el texto, o la URL de la imagen) |
+| content_type | String | `text` o `image` (por defecto `text`) |
+| background | String | Color de fondo para los estados de texto |
+| created_at | Date | Fecha de publicación |
+| expires_at | Date | Requerido. **Índice TTL**: el documento se borra solo al vencer (24 h) |
+
+Índice TTL sobre `expires_at` (`expireAfterSeconds: 0`) e índice `(user_id, created_at desc)`.
+
 ## 8. Seguridad y autenticación
 
 - **Contraseñas:** nunca se guardan en texto plano. Se hashean con **bcrypt** (12 rondas) antes de persistirlas.
@@ -303,6 +318,16 @@ Base local: `http://localhost:3000`
 > **Edición y borrado:** solo el **autor** puede editar o borrar su mensaje (de lo contrario, `403`); un mensaje ya borrado o ajeno a la conversación responde `404`. El borrado es **lógico** (`deleted_at`), por lo que el mensaje deja de listarse pero no se elimina de la base.
 >
 > **Rate limiting:** el envío de mensajes admite 30 por minuto por usuario y `/bot-reply` 15 por minuto. Al excederlos se responde `429 Too Many Requests`.
+
+### Estados — `/api/status`
+
+| Método | Ruta | Auth | Body | Descripción |
+|---|---|---|---|---|
+| GET | `/` | Sí | — | Estados vigentes de todos los usuarios (con el autor poblado), del más nuevo al más viejo |
+| POST | `/` | Sí | `{ content, content_type?, background? }` | Publica un estado (`text` o `image`); vence a las 24 h |
+| DELETE | `/:status_id` | Sí | — | Borra un estado propio |
+
+> **Expiración automática:** cada estado guarda un `expires_at` (publicación + 24 h) con un **índice TTL** de MongoDB, que borra el documento al vencer sin necesidad de un proceso programado. Solo el **autor** puede borrar su estado (de lo contrario, `403`).
 
 ### Salud — `/api/health`
 
@@ -441,6 +466,7 @@ Qué se cubre:
 - **Autenticación** — registro (alta correcta, sin exponer nunca el `password_hash`, rechazo de email/contraseña inválidos y de emails duplicados) y login (credenciales incorrectas → `401`, cuenta sin verificar → `403`, login válido → token).
 - **Recuperación de contraseña** — respuesta genérica ante emails inexistentes, flujo completo *forgot → reset → login* con la nueva clave, y verificación de que el token es de **un solo uso**.
 - **Mensajería** — envío por un participante (`201`) y rechazo de un tercero ajeno (`403`), validación de mensaje vacío e id con formato inválido (`400`), acceso sin token (`401`), paginación (`?limit`), y edición/borrado (solo el autor; `403` para el resto).
+- **Estados** — publicación con vencimiento a 24 h, listado con el autor poblado, borrado solo por el autor (`403` para el resto), y validaciones de estado vacío e id inválido (`400`).
 
 Para correr la batería:
 
