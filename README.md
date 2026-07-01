@@ -53,11 +53,11 @@ El diseño parte de una idea central: **una conversación es una conversación**
 
 - Registro de usuarios con hash de contraseña (bcrypt) y **verificación obligatoria por email**.
 - Login que devuelve un **JWT con expiración**; las rutas sensibles quedan protegidas por un middleware de autenticación.
-- **Protección contra fuerza bruta** en el login y contra registro masivo, mediante *rate limiting* por IP.
+- **Protección contra fuerza bruta** en el login y contra registro masivo, y **límite de flood** en el envío de mensajes y en las respuestas de IA, mediante *rate limiting*.
 - **CAPTCHA (Cloudflare Turnstile)** en el registro para frenar bots automatizados.
 - **Espacio de trabajo / directorio de usuarios:** al entrar, cada usuario ve a todos los demás (compañeros y los 12 cracks) y puede chatear con cualquiera sin tener que agregarlo. El **CRUD de Contactos** (agregar, alias, favoritos, bloqueo) sigue disponible en la API como entidad del modelo.
 - **CRUD de Grupos** (entidad relacionada), con **alta y baja de miembros en grupos ya creados**, roles (admin / co-admin / member) y control de permisos.
-- **Mensajería** uno a uno y grupal, reutilizando el mismo modelo de conversaciones.
+- **Mensajería** uno a uno y grupal, reutilizando el mismo modelo de conversaciones, con **edición y borrado** de mensajes (borrado lógico) y **paginación** para traer el historial por tramos.
 - **12 cracks precargados** como usuarios bot, visibles para todos; cada usuario nuevo arranca con un **chat de bienvenida** con cada crack.
 - Arquitectura en capas, validación de entrada, manejo centralizado de errores y respuestas con formato uniforme.
 
@@ -230,10 +230,10 @@ El modelo está formado por **6 entidades**. Su diseño parte de un modelo relac
 - **Contraseñas:** nunca se guardan en texto plano. Se hashean con **bcrypt** (12 rondas) antes de persistirlas.
 - **JWT:** el login devuelve un token firmado con expiración configurable. Las rutas protegidas esperan el header `Authorization: Bearer <token>`; el middleware de autenticación lo verifica y expone el usuario en la request.
 - **Verificación por email:** al registrarse se envía un email con un link de activación (`nodemailer`). Hasta que el email no está verificado, el login es rechazado.
-- **Rate limiting (protección contra fuerza bruta):** los endpoints de autenticación están limitados por IP con `express-rate-limit`. El login admite **10 intentos fallidos cada 15 minutos** (un login exitoso no consume cupo, gracias a `skipSuccessfulRequests`, para no penalizar al usuario legítimo) y el registro **5 cuentas por hora** (evita el alta masiva y el spam de emails de verificación). Superado el límite, la API responde `429 Too Many Requests` con la cabecera estándar `Retry-After`. Como el backend corre detrás del proxy de Render, se configura `trust proxy` para identificar la IP real del cliente.
+- **Rate limiting (protección contra fuerza bruta y flood):** se aplica con `express-rate-limit`. Los endpoints de autenticación se limitan por IP: el login admite **10 intentos fallidos cada 15 minutos** (un login exitoso no consume cupo, gracias a `skipSuccessfulRequests`, para no penalizar al usuario legítimo) y el registro **5 cuentas por hora** (evita el alta masiva y el spam de emails de verificación). El envío de mensajes se limita a **30 por minuto** y la respuesta de los cracks (que consume la API de Groq) a **15 por minuto**; estos dos se cuentan **por usuario autenticado** —no por IP— para no penalizar a varias personas detrás de la misma red. Superado el límite, la API responde `429 Too Many Requests` con la cabecera estándar `Retry-After`. Como el backend corre detrás del proxy de Render, se configura `trust proxy` para identificar la IP real del cliente.
 - **Middlewares obligatorios:**
   - **CORS** — habilita el consumo desde el frontend.
-  - **Validación de entrada** — un middleware propio (`validate.middleware.js`) revisa el `body` de cada petición y rechaza con `400` lo que falte o esté mal formado, antes de llegar a la lógica. Se implementó a mano en vez de usar una librería como `express-validator`: el resultado es el mismo (ningún dato inválido llega al controller), con control total del mecanismo y sin sumar dependencias.
+  - **Validación de entrada** — un middleware propio (`validate.middleware.js`) revisa el `body` de cada petición y rechaza con `400` lo que falte o esté mal formado, antes de llegar a la lógica. Incluye `validateObjectId`, que valida el formato de los identificadores en la ruta (`:conversation_id`, `:message_id`, `:group_id`, …) y devuelve un `400` claro en vez del `500` que arrojaría Mongoose al castear un id inválido. Se implementó a mano en vez de usar una librería como `express-validator`: el resultado es el mismo (ningún dato inválido llega al controller), con control total del mecanismo y sin sumar dependencias.
   - **Rate limiting** — `rateLimit.middleware.js` aplica el límite por IP en `/login` y `/register`.
   - **CAPTCHA** — `turnstile.middleware.js` valida el token de Cloudflare Turnstile en `/register` contra el endpoint `siteverify`. Es condicional: si no hay `TURNSTILE_SECRET` configurado, el captcha queda desactivado y el registro sigue funcionando (útil en local).
   - **Autenticación JWT** — protege las rutas sensibles.
@@ -287,9 +287,15 @@ Base local: `http://localhost:3000`
 |---|---|---|---|---|
 | GET | `/` | Sí | — | Mis chats (participantes + último mensaje) |
 | POST | `/private` | Sí | `{ user_id }` | Abre o recupera el chat privado con ese usuario |
-| GET | `/:conversation_id/messages` | Sí | — | Mensajes de la conversación |
+| GET | `/:conversation_id/messages?limit=&before=` | Sí | — | Mensajes de la conversación, en orden cronológico. `limit` (por defecto 50, máximo 100) y `before` (fecha ISO) permiten paginar hacia atrás — traer los mensajes previos a ese instante para el "cargar más antiguos" |
 | POST | `/:conversation_id/messages` | Sí | `{ content, content_type?, reply_to_message_id? }` | Envía un mensaje |
+| PATCH | `/:conversation_id/messages/:message_id` | Sí | `{ content }` | Edita el contenido de un mensaje propio (marca `edited_at`) |
+| DELETE | `/:conversation_id/messages/:message_id` | Sí | — | Borra (lógico) un mensaje propio (marca `deleted_at`) |
 | POST | `/:conversation_id/bot-reply` | Sí | `{ content }` | Genera con IA (Groq, en el servidor) y persiste la respuesta del crack; `content` es el mensaje del usuario a responder |
+
+> **Edición y borrado:** solo el **autor** puede editar o borrar su mensaje (de lo contrario, `403`); un mensaje ya borrado o ajeno a la conversación responde `404`. El borrado es **lógico** (`deleted_at`), por lo que el mensaje deja de listarse pero no se elimina de la base.
+>
+> **Rate limiting:** el envío de mensajes admite 30 por minuto por usuario y `/bot-reply` 15 por minuto. Al excederlos se responde `429 Too Many Requests`.
 
 ### Salud — `/api/health`
 
