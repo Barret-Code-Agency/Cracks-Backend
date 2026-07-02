@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Cracks API — TP Final Backend (UTN)",
-    "description": "Coleccion de la API REST de CracksApp (Node + Express + MongoDB).\n\nUso rapido:\n1. La variable `baseUrl` ya apunta al deploy publico. Para local, cambiala a http://localhost:3000\n2. Ejecuta **Auth > Login** con el usuario de prueba: al responder, guarda solo el token en la variable `token`.\n3. El resto de los requests protegidos usan ese token automaticamente (Authorization: Bearer).\n4. Completa las variables de id (groupId, conversationId, etc.) con valores reales que devuelvan los GET.\n\nUsuario de prueba (email verificado): cracks.tp.utn@gmail.com / Cracks2026!",
+    "description": "Coleccion de la API REST de CracksApp (Node + Express + MongoDB).\n\nUso: la variable `baseUrl` ya apunta al deploy publico (para local, cambiala a http://localhost:3000). Corre la coleccion en orden (Runner) o de arriba hacia abajo: **Login** guarda el token, y los pasos de creacion (grupo, chat, mensaje, estado) guardan sus ids automaticamente para los pasos siguientes.\n\nUsuario de prueba (email verificado): cracks.tp.utn@gmail.com / Cracks2026!",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -24,19 +24,13 @@
       "item": [
         {
           "name": "Raiz (info API)",
-          "request": {
-            "auth": { "type": "noauth" },
-            "method": "GET",
-            "url": { "raw": "{{baseUrl}}/", "host": ["{{baseUrl}}"], "path": [""] }
-          }
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', () => pm.expect(pm.response.code).to.eql(200));"] } }],
+          "request": { "auth": { "type": "noauth" }, "method": "GET", "url": { "raw": "{{baseUrl}}/", "host": ["{{baseUrl}}"], "path": [""] } }
         },
         {
           "name": "Health",
-          "request": {
-            "auth": { "type": "noauth" },
-            "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/health", "host": ["{{baseUrl}}"], "path": ["api", "health"] }
-          }
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', () => pm.expect(pm.response.code).to.eql(200));"] } }],
+          "request": { "auth": { "type": "noauth" }, "method": "GET", "url": { "raw": "{{baseUrl}}/api/health", "host": ["{{baseUrl}}"], "path": ["api", "health"] } }
         }
       ]
     },
@@ -55,29 +49,15 @@
         },
         {
           "name": "Verify email",
-          "request": {
-            "auth": { "type": "noauth" },
-            "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/auth/verify-email?token=TOKEN_DEL_EMAIL", "host": ["{{baseUrl}}"], "path": ["api", "auth", "verify-email"], "query": [{ "key": "token", "value": "TOKEN_DEL_EMAIL" }] }
-          }
+          "request": { "auth": { "type": "noauth" }, "method": "GET", "url": { "raw": "{{baseUrl}}/api/auth/verify-email?token=TOKEN_DEL_EMAIL", "host": ["{{baseUrl}}"], "path": ["api", "auth", "verify-email"], "query": [{ "key": "token", "value": "TOKEN_DEL_EMAIL" }] } }
         },
         {
           "name": "Login (guarda el token)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const d = pm.response.json();",
-                  "if (d && d.data && d.data.access_token) {",
-                  "  pm.collectionVariables.set('token', d.data.access_token);",
-                  "  console.log('Token guardado en la variable token');",
-                  "}"
-                ]
-              }
-            }
-          ],
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('login 200', () => pm.expect(pm.response.code).to.eql(200));",
+            "const d = pm.response.json();",
+            "if (d && d.data && d.data.access_token) { pm.collectionVariables.set('token', d.data.access_token); }"
+          ] } }],
           "request": {
             "auth": { "type": "noauth" },
             "method": "POST",
@@ -88,6 +68,7 @@
         },
         {
           "name": "Forgot password",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', () => pm.expect(pm.response.code).to.eql(200));"] } }],
           "request": {
             "auth": { "type": "noauth" },
             "method": "POST",
@@ -113,17 +94,16 @@
       "item": [
         {
           "name": "Buscar usuarios",
-          "request": {
-            "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/users?q=mes", "host": ["{{baseUrl}}"], "path": ["api", "users"], "query": [{ "key": "q", "value": "mes" }] }
-          }
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', () => pm.expect(pm.response.code).to.eql(200));"] } }],
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/users?q=ar", "host": ["{{baseUrl}}"], "path": ["api", "users"], "query": [{ "key": "q", "value": "ar" }] } }
         },
         {
           "name": "Editar mi perfil",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', () => pm.expect(pm.response.code).to.eql(200));"] } }],
           "request": {
             "method": "PATCH",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"display_name\": \"Mi nuevo nombre\",\n  \"status_message\": \"Disponible\"\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"status_message\": \"Disponible\"\n}" },
             "url": { "raw": "{{baseUrl}}/api/users/me", "host": ["{{baseUrl}}"], "path": ["api", "users", "me"] }
           }
         }
@@ -133,7 +113,16 @@
       "name": "Contacts",
       "item": [
         {
-          "name": "Listar contactos",
+          "name": "Listar contactos (guarda userId)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.expect(pm.response.code).to.eql(200));",
+            "const d = pm.response.json();",
+            "const arr = (d && d.data && d.data.contacts) || [];",
+            "if (arr[0] && arr[0].contact_user_id) {",
+            "  const u = arr[0].contact_user_id;",
+            "  pm.collectionVariables.set('userId', u._id || u);",
+            "}"
+          ] } }],
           "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/contacts", "host": ["{{baseUrl}}"], "path": ["api", "contacts"] } }
         },
         {
@@ -146,20 +135,16 @@
           }
         },
         {
-          "name": "Detalle de contacto",
-          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/contacts/{{contactId}}", "host": ["{{baseUrl}}"], "path": ["api", "contacts", "{{contactId}}"] } }
-        },
-        {
-          "name": "Editar contacto",
+          "name": "Editar contacto (requiere contactId real)",
           "request": {
             "method": "PUT",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"alias\": \"Nuevo alias\",\n  \"is_favorite\": true,\n  \"is_blocked\": false\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"is_favorite\": true\n}" },
             "url": { "raw": "{{baseUrl}}/api/contacts/{{contactId}}", "host": ["{{baseUrl}}"], "path": ["api", "contacts", "{{contactId}}"] }
           }
         },
         {
-          "name": "Eliminar contacto",
+          "name": "Eliminar contacto (requiere contactId real)",
           "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/contacts/{{contactId}}", "host": ["{{baseUrl}}"], "path": ["api", "contacts", "{{contactId}}"] } }
         }
       ]
@@ -168,37 +153,42 @@
       "name": "Groups",
       "item": [
         {
-          "name": "Crear grupo",
+          "name": "Crear grupo (guarda groupId)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('201', () => pm.expect(pm.response.code).to.eql(201));",
+            "const d = pm.response.json();",
+            "if (d && d.data && d.data.group) { pm.collectionVariables.set('groupId', d.data.group._id || d.data.group.id); }"
+          ] } }],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Mi grupo\",\n  \"description\": \"Descripcion opcional\",\n  \"member_ids\": []\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Grupo de prueba\",\n  \"description\": \"Creado desde Postman\"\n}" },
             "url": { "raw": "{{baseUrl}}/api/groups", "host": ["{{baseUrl}}"], "path": ["api", "groups"] }
           }
         },
         {
           "name": "Listar mis grupos",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', () => pm.expect(pm.response.code).to.eql(200));"] } }],
           "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/groups", "host": ["{{baseUrl}}"], "path": ["api", "groups"] } }
         },
         {
           "name": "Detalle de grupo",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', () => pm.expect(pm.response.code).to.eql(200));"] } }],
           "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/groups/{{groupId}}", "host": ["{{baseUrl}}"], "path": ["api", "groups", "{{groupId}}"] } }
         },
         {
           "name": "Editar grupo",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', () => pm.expect(pm.response.code).to.eql(200));"] } }],
           "request": {
             "method": "PUT",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Grupo editado\",\n  \"description\": \"Nueva descripcion\"\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Grupo editado\"\n}" },
             "url": { "raw": "{{baseUrl}}/api/groups/{{groupId}}", "host": ["{{baseUrl}}"], "path": ["api", "groups", "{{groupId}}"] }
           }
         },
         {
-          "name": "Eliminar grupo",
-          "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/groups/{{groupId}}", "host": ["{{baseUrl}}"], "path": ["api", "groups", "{{groupId}}"] } }
-        },
-        {
           "name": "Agregar miembro",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('2xx', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));"] } }],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -208,7 +198,13 @@
         },
         {
           "name": "Quitar miembro",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', () => pm.expect(pm.response.code).to.eql(200));"] } }],
           "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/groups/{{groupId}}/members/{{userId}}", "host": ["{{baseUrl}}"], "path": ["api", "groups", "{{groupId}}", "members", "{{userId}}"] } }
+        },
+        {
+          "name": "Eliminar grupo",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', () => pm.expect(pm.response.code).to.eql(200));"] } }],
+          "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/groups/{{groupId}}", "host": ["{{baseUrl}}"], "path": ["api", "groups", "{{groupId}}"] } }
         }
       ]
     },
@@ -217,10 +213,16 @@
       "item": [
         {
           "name": "Listar mis chats",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', () => pm.expect(pm.response.code).to.eql(200));"] } }],
           "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/conversations", "host": ["{{baseUrl}}"], "path": ["api", "conversations"] } }
         },
         {
-          "name": "Abrir chat privado",
+          "name": "Abrir chat privado (guarda conversationId)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.expect(pm.response.code).to.eql(200));",
+            "const d = pm.response.json();",
+            "if (d && d.data && d.data.conversation) { pm.collectionVariables.set('conversationId', d.data.conversation._id || d.data.conversation.id); }"
+          ] } }],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -229,33 +231,33 @@
           }
         },
         {
-          "name": "Mensajes (con paginacion)",
-          "request": {
-            "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/conversations/{{conversationId}}/messages?limit=50", "host": ["{{baseUrl}}"], "path": ["api", "conversations", "{{conversationId}}", "messages"], "query": [{ "key": "limit", "value": "50" }, { "key": "before", "value": "", "disabled": true }] }
-          }
-        },
-        {
-          "name": "Enviar mensaje",
+          "name": "Enviar mensaje (guarda messageId)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('201', () => pm.expect(pm.response.code).to.eql(201));",
+            "const d = pm.response.json();",
+            "if (d && d.data && d.data.message) { pm.collectionVariables.set('messageId', d.data.message._id); }"
+          ] } }],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"content\": \"Hola!\"\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"Hola desde Postman!\"\n}" },
             "url": { "raw": "{{baseUrl}}/api/conversations/{{conversationId}}/messages", "host": ["{{baseUrl}}"], "path": ["api", "conversations", "{{conversationId}}", "messages"] }
           }
         },
         {
+          "name": "Mensajes (con paginacion)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', () => pm.expect(pm.response.code).to.eql(200));"] } }],
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/conversations/{{conversationId}}/messages?limit=50", "host": ["{{baseUrl}}"], "path": ["api", "conversations", "{{conversationId}}", "messages"], "query": [{ "key": "limit", "value": "50" }] } }
+        },
+        {
           "name": "Editar mensaje",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', () => pm.expect(pm.response.code).to.eql(200));"] } }],
           "request": {
             "method": "PATCH",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": { "mode": "raw", "raw": "{\n  \"content\": \"Mensaje editado\"\n}" },
             "url": { "raw": "{{baseUrl}}/api/conversations/{{conversationId}}/messages/{{messageId}}", "host": ["{{baseUrl}}"], "path": ["api", "conversations", "{{conversationId}}", "messages", "{{messageId}}"] }
           }
-        },
-        {
-          "name": "Borrar mensaje",
-          "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/conversations/{{conversationId}}/messages/{{messageId}}", "host": ["{{baseUrl}}"], "path": ["api", "conversations", "{{conversationId}}", "messages", "{{messageId}}"] } }
         },
         {
           "name": "Respuesta del crack (IA)",
@@ -265,6 +267,11 @@
             "body": { "mode": "raw", "raw": "{\n  \"content\": \"Hola crack, como estas?\"\n}" },
             "url": { "raw": "{{baseUrl}}/api/conversations/{{conversationId}}/bot-reply", "host": ["{{baseUrl}}"], "path": ["api", "conversations", "{{conversationId}}", "bot-reply"] }
           }
+        },
+        {
+          "name": "Borrar mensaje",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', () => pm.expect(pm.response.code).to.eql(200));"] } }],
+          "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/conversations/{{conversationId}}/messages/{{messageId}}", "host": ["{{baseUrl}}"], "path": ["api", "conversations", "{{conversationId}}", "messages", "{{messageId}}"] } }
         }
       ]
     },
@@ -272,20 +279,27 @@
       "name": "Status (Estados)",
       "item": [
         {
-          "name": "Listar estados vigentes",
-          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/status", "host": ["{{baseUrl}}"], "path": ["api", "status"] } }
-        },
-        {
-          "name": "Publicar estado",
+          "name": "Publicar estado (guarda statusId)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('201', () => pm.expect(pm.response.code).to.eql(201));",
+            "const d = pm.response.json();",
+            "if (d && d.data && d.data.status) { pm.collectionVariables.set('statusId', d.data.status._id); }"
+          ] } }],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"content\": \"Mi primer estado\",\n  \"content_type\": \"text\",\n  \"background\": \"#00a884\"\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"Mi estado de prueba\",\n  \"content_type\": \"text\",\n  \"background\": \"#00a884\"\n}" },
             "url": { "raw": "{{baseUrl}}/api/status", "host": ["{{baseUrl}}"], "path": ["api", "status"] }
           }
         },
         {
+          "name": "Listar estados vigentes",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', () => pm.expect(pm.response.code).to.eql(200));"] } }],
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/status", "host": ["{{baseUrl}}"], "path": ["api", "status"] } }
+        },
+        {
           "name": "Borrar estado",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('200', () => pm.expect(pm.response.code).to.eql(200));"] } }],
           "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/status/{{statusId}}", "host": ["{{baseUrl}}"], "path": ["api", "status", "{{statusId}}"] } }
         }
       ]
