@@ -43,6 +43,17 @@ app.use(cors({
 }))
 app.use(express.json({ limit: '5mb' }))
 
+// Raiz informativa: esto es una API REST, no un sitio. Evita el "Cannot GET /"
+// y le dice a quien entre por el navegador donde mirar.
+app.get('/', (request, response) => {
+    response.json({
+        ok: true,
+        status: 200,
+        message: 'Cracks API — REST. Estado en /api/health',
+        repo: 'https://github.com/Barret-Code-Agency/Cracks-Backend'
+    })
+})
+
 app.get('/api/health', (request, response) => {
     response.json({ ok: true, status: 200, message: 'Cracks API funcionando' })
 })
