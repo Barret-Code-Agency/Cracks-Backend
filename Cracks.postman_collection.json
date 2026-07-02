@@ -1,0 +1,294 @@
+{
+  "info": {
+    "name": "Cracks API — TP Final Backend (UTN)",
+    "description": "Coleccion de la API REST de CracksApp (Node + Express + MongoDB).\n\nUso rapido:\n1. La variable `baseUrl` ya apunta al deploy publico. Para local, cambiala a http://localhost:3000\n2. Ejecuta **Auth > Login** con el usuario de prueba: al responder, guarda solo el token en la variable `token`.\n3. El resto de los requests protegidos usan ese token automaticamente (Authorization: Bearer).\n4. Completa las variables de id (groupId, conversationId, etc.) con valores reales que devuelvan los GET.\n\nUsuario de prueba (email verificado): cracks.tp.utn@gmail.com / Cracks2026!",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://cracks-backend.onrender.com" },
+    { "key": "token", "value": "" },
+    { "key": "userId", "value": "" },
+    { "key": "contactId", "value": "" },
+    { "key": "groupId", "value": "" },
+    { "key": "conversationId", "value": "" },
+    { "key": "messageId", "value": "" },
+    { "key": "statusId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "General",
+      "item": [
+        {
+          "name": "Raiz (info API)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/", "host": ["{{baseUrl}}"], "path": [""] }
+          }
+        },
+        {
+          "name": "Health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/health", "host": ["{{baseUrl}}"], "path": ["api", "health"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"nuevo@ejemplo.com\",\n  \"password\": \"Password1\",\n  \"display_name\": \"Usuario Nuevo\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] }
+          }
+        },
+        {
+          "name": "Verify email",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/auth/verify-email?token=TOKEN_DEL_EMAIL", "host": ["{{baseUrl}}"], "path": ["api", "auth", "verify-email"], "query": [{ "key": "token", "value": "TOKEN_DEL_EMAIL" }] }
+          }
+        },
+        {
+          "name": "Login (guarda el token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json();",
+                  "if (d && d.data && d.data.access_token) {",
+                  "  pm.collectionVariables.set('token', d.data.access_token);",
+                  "  console.log('Token guardado en la variable token');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"cracks.tp.utn@gmail.com\",\n  \"password\": \"Cracks2026!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Forgot password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"cracks.tp.utn@gmail.com\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/forgot-password", "host": ["{{baseUrl}}"], "path": ["api", "auth", "forgot-password"] }
+          }
+        },
+        {
+          "name": "Reset password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"token\": \"TOKEN_DEL_EMAIL\",\n  \"password\": \"NuevaClave1\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/reset-password", "host": ["{{baseUrl}}"], "path": ["api", "auth", "reset-password"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Buscar usuarios",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/users?q=mes", "host": ["{{baseUrl}}"], "path": ["api", "users"], "query": [{ "key": "q", "value": "mes" }] }
+          }
+        },
+        {
+          "name": "Editar mi perfil",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"display_name\": \"Mi nuevo nombre\",\n  \"status_message\": \"Disponible\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/users/me", "host": ["{{baseUrl}}"], "path": ["api", "users", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Contacts",
+      "item": [
+        {
+          "name": "Listar contactos",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/contacts", "host": ["{{baseUrl}}"], "path": ["api", "contacts"] } }
+        },
+        {
+          "name": "Agregar contacto",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"contact_user_id\": \"{{userId}}\",\n  \"alias\": \"Alias opcional\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/contacts", "host": ["{{baseUrl}}"], "path": ["api", "contacts"] }
+          }
+        },
+        {
+          "name": "Detalle de contacto",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/contacts/{{contactId}}", "host": ["{{baseUrl}}"], "path": ["api", "contacts", "{{contactId}}"] } }
+        },
+        {
+          "name": "Editar contacto",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"alias\": \"Nuevo alias\",\n  \"is_favorite\": true,\n  \"is_blocked\": false\n}" },
+            "url": { "raw": "{{baseUrl}}/api/contacts/{{contactId}}", "host": ["{{baseUrl}}"], "path": ["api", "contacts", "{{contactId}}"] }
+          }
+        },
+        {
+          "name": "Eliminar contacto",
+          "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/contacts/{{contactId}}", "host": ["{{baseUrl}}"], "path": ["api", "contacts", "{{contactId}}"] } }
+        }
+      ]
+    },
+    {
+      "name": "Groups",
+      "item": [
+        {
+          "name": "Crear grupo",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Mi grupo\",\n  \"description\": \"Descripcion opcional\",\n  \"member_ids\": []\n}" },
+            "url": { "raw": "{{baseUrl}}/api/groups", "host": ["{{baseUrl}}"], "path": ["api", "groups"] }
+          }
+        },
+        {
+          "name": "Listar mis grupos",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/groups", "host": ["{{baseUrl}}"], "path": ["api", "groups"] } }
+        },
+        {
+          "name": "Detalle de grupo",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/groups/{{groupId}}", "host": ["{{baseUrl}}"], "path": ["api", "groups", "{{groupId}}"] } }
+        },
+        {
+          "name": "Editar grupo",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Grupo editado\",\n  \"description\": \"Nueva descripcion\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/groups/{{groupId}}", "host": ["{{baseUrl}}"], "path": ["api", "groups", "{{groupId}}"] }
+          }
+        },
+        {
+          "name": "Eliminar grupo",
+          "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/groups/{{groupId}}", "host": ["{{baseUrl}}"], "path": ["api", "groups", "{{groupId}}"] } }
+        },
+        {
+          "name": "Agregar miembro",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"user_id\": \"{{userId}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/groups/{{groupId}}/members", "host": ["{{baseUrl}}"], "path": ["api", "groups", "{{groupId}}", "members"] }
+          }
+        },
+        {
+          "name": "Quitar miembro",
+          "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/groups/{{groupId}}/members/{{userId}}", "host": ["{{baseUrl}}"], "path": ["api", "groups", "{{groupId}}", "members", "{{userId}}"] } }
+        }
+      ]
+    },
+    {
+      "name": "Conversations & Messages",
+      "item": [
+        {
+          "name": "Listar mis chats",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/conversations", "host": ["{{baseUrl}}"], "path": ["api", "conversations"] } }
+        },
+        {
+          "name": "Abrir chat privado",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"user_id\": \"{{userId}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/conversations/private", "host": ["{{baseUrl}}"], "path": ["api", "conversations", "private"] }
+          }
+        },
+        {
+          "name": "Mensajes (con paginacion)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/conversations/{{conversationId}}/messages?limit=50", "host": ["{{baseUrl}}"], "path": ["api", "conversations", "{{conversationId}}", "messages"], "query": [{ "key": "limit", "value": "50" }, { "key": "before", "value": "", "disabled": true }] }
+          }
+        },
+        {
+          "name": "Enviar mensaje",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"Hola!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/conversations/{{conversationId}}/messages", "host": ["{{baseUrl}}"], "path": ["api", "conversations", "{{conversationId}}", "messages"] }
+          }
+        },
+        {
+          "name": "Editar mensaje",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"Mensaje editado\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/conversations/{{conversationId}}/messages/{{messageId}}", "host": ["{{baseUrl}}"], "path": ["api", "conversations", "{{conversationId}}", "messages", "{{messageId}}"] }
+          }
+        },
+        {
+          "name": "Borrar mensaje",
+          "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/conversations/{{conversationId}}/messages/{{messageId}}", "host": ["{{baseUrl}}"], "path": ["api", "conversations", "{{conversationId}}", "messages", "{{messageId}}"] } }
+        },
+        {
+          "name": "Respuesta del crack (IA)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"Hola crack, como estas?\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/conversations/{{conversationId}}/bot-reply", "host": ["{{baseUrl}}"], "path": ["api", "conversations", "{{conversationId}}", "bot-reply"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Status (Estados)",
+      "item": [
+        {
+          "name": "Listar estados vigentes",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/status", "host": ["{{baseUrl}}"], "path": ["api", "status"] } }
+        },
+        {
+          "name": "Publicar estado",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"Mi primer estado\",\n  \"content_type\": \"text\",\n  \"background\": \"#00a884\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/status", "host": ["{{baseUrl}}"], "path": ["api", "status"] }
+          }
+        },
+        {
+          "name": "Borrar estado",
+          "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/status/{{statusId}}", "host": ["{{baseUrl}}"], "path": ["api", "status", "{{statusId}}"] } }
+        }
+      ]
+    }
+  ]
+}

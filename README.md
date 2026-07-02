@@ -263,6 +263,8 @@ El modelo está formado por **6 entidades** (más `status`, sumada para la funci
 
 Base local: `http://localhost:3000`
 
+> 📮 **Postman:** en la raíz del repo está `Cracks.postman_collection.json` con todos los endpoints listos para probar. Importala en Postman, corré **Auth → Login** (guarda el token solo) y el resto de los requests protegidos ya salen autenticados.
+
 ### Autenticación — `/api/auth`
 
 | Método | Ruta | Auth | Body | Descripción |
