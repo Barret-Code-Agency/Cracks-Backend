@@ -374,44 +374,84 @@ El seed es **idempotente**: identifica a cada crack por su email (`crackNNN@crac
 
 ## 12. Instalación y ejecución
 
-**Requisitos:** Node.js 20+ y una instancia de MongoDB (local o Atlas).
+**Requisitos previos:** [Node.js](https://nodejs.org) **20 o superior** y una instancia de **MongoDB** — local ([MongoDB Community](https://www.mongodb.com/try/download/community)) o en la nube ([MongoDB Atlas](https://www.mongodb.com/atlas), plan gratuito M0).
 
-```
-git clone <url-del-repo>
+### Paso 1 — Clonar el repositorio
+
+```bash
+git clone https://github.com/Barret-Code-Agency/Cracks-Backend.git
 cd Cracks-Backend
+```
+
+### Paso 2 — Instalar dependencias
+
+```bash
 npm install
 ```
 
-Crear un archivo `.env` en la raíz (ver la sección siguiente) y luego:
+### Paso 3 — Configurar las variables de entorno
 
+Copiá la plantilla `.env.example` a un archivo `.env` en la raíz del proyecto:
+
+```bash
+cp .env.example .env      # en Windows (PowerShell): copy .env.example .env
 ```
-npm run dev      # desarrollo, con recarga automática
+
+Y completá los valores (el detalle de cada variable está en la [sección 13](#13-variables-de-entorno)). El **mínimo indispensable** para correr en local es `MONGO_URI` y `JWT_SECRET`; el resto tiene defaults o modos de desarrollo que permiten probar sin credenciales externas.
+
+### Paso 4 — Levantar la base de datos
+
+- **MongoDB local:** asegurate de que el servicio esté corriendo (por ejemplo `mongod`, o el servicio de Windows/`brew services start mongodb-community`). La `MONGO_URI` por defecto apunta a `mongodb://127.0.0.1:27017/cracks`.
+- **MongoDB Atlas:** no hace falta levantar nada; solo pegá la cadena de conexión del cluster en `MONGO_URI`.
+
+Con la base disponible, cargá los 12 cracks (opcional pero recomendado para tener contactos con quién chatear):
+
+```bash
+npm run seed          # carga los 12 cracks (idempotente)
+npm run seed:demo     # opcional: crea la cuenta de prueba ya verificada
+```
+
+### Paso 5 — Arrancar el servidor
+
+```bash
+npm run dev      # desarrollo, con recarga automática (node --watch)
 npm start        # producción
-npm run seed     # carga los 12 cracks
 ```
 
-La API queda disponible en `http://localhost:3000`.
+### Paso 6 — Verificar que funciona
+
+La API queda disponible en **`http://localhost:3000`**. Para comprobarlo, abrí en el navegador o con `curl` el endpoint de salud:
+
+```bash
+curl http://localhost:3000/api/health
+```
+
+Debería responder un JSON con `"ok": true`. Para probar el resto de los endpoints, importá `Cracks.postman_collection.json` en Postman (ver [sección 9](#9-endpoints-de-la-api)).
 
 ## 13. Variables de entorno
 
-| Variable | Descripción |
-|---|---|
-| MODE | Entorno (`development` / `production`) |
-| PORT | Puerto del servidor (por defecto 3000) |
-| MONGO_URI | Cadena de conexión a MongoDB |
-| JWT_SECRET | Secreto para firmar los tokens |
-| JWT_EXPIRES_IN | Vencimiento del token (ej. `1d`) |
-| SMTP_HOST | Host del relay SMTP (ej. `smtp-relay.brevo.com`) |
-| SMTP_PORT | Puerto SMTP (ej. `587`) |
-| SMTP_USER | Usuario del relay SMTP |
-| SMTP_PASS | Clave SMTP |
-| BREVO_API_KEY | API key v3 de Brevo para enviar por su API HTTP (recomendado en producción) |
-| MAIL_FROM | Dirección remitente de los emails |
-| MAIL_FROM_NAME | Nombre visible del remitente |
-| TURNSTILE_SECRET | Secret key de Cloudflare Turnstile (CAPTCHA del registro). Vacío = captcha desactivado |
-| URL_BACKEND | URL pública del backend |
-| URL_FRONTEND | URL pública del frontend |
-| GROQ_API_KEY | API key de Groq para generar las respuestas de los cracks (corre en el servidor) |
+Todas viven en el archivo `.env` de la raíz. La plantilla `.env.example` ya trae los valores por defecto para desarrollo local.
+
+| Variable | Descripción | Ejemplo |
+|---|---|---|
+| `MODE` | Entorno de ejecución | `development` |
+| `PORT` | Puerto del servidor | `3000` |
+| `MONGO_URI` | Cadena de conexión a MongoDB (local o Atlas) | `mongodb://127.0.0.1:27017/cracks` |
+| `JWT_SECRET` | Secreto para firmar los tokens (poné una cadena larga y aleatoria) | `una_clave_larga_y_secreta_123` |
+| `JWT_EXPIRES_IN` | Vencimiento del token | `1d` |
+| `SMTP_HOST` | Host del relay SMTP | `smtp-relay.brevo.com` |
+| `SMTP_PORT` | Puerto SMTP | `587` |
+| `SMTP_USER` | Usuario del relay SMTP | `usuario@dominio.com` |
+| `SMTP_PASS` | Clave SMTP | `tu_clave_smtp` |
+| `BREVO_API_KEY` | API key v3 de Brevo para enviar por su API HTTP (recomendado en producción) | `xkeysib-...` |
+| `MAIL_FROM` | Dirección remitente de los emails | `no-reply@tudominio.com` |
+| `MAIL_FROM_NAME` | Nombre visible del remitente | `Chat de Cracks` |
+| `TURNSTILE_SECRET` | Secret key de Cloudflare Turnstile (CAPTCHA del registro). Vacío = captcha desactivado | `1x0000000000000000000000000000000AA` |
+| `URL_BACKEND` | URL pública del backend | `http://localhost:3000` |
+| `URL_FRONTEND` | URL pública del frontend (para CORS y links de email) | `http://localhost:5173` |
+| `GROQ_API_KEY` | API key de [Groq](https://console.groq.com) para las respuestas de los cracks (corre en el servidor) | `gsk_...` |
+
+> ℹ️ **Para correr solo en local alcanza con `MONGO_URI` y `JWT_SECRET`.** Las demás pueden quedar vacías: el backend degrada con elegancia (ver abajo). La clave de test de Turnstile `1x0000000000000000000000000000000AA` siempre pasa el captcha, útil para probar el registro.
 
 **Envío de emails.** El backend envía la verificación de cuenta por dos vías: si `BREVO_API_KEY` está configurada, usa la **API HTTP de Brevo** (puerto 443); si no, cae al **SMTP** (`SMTP_*`). En hostings como Render, cuyo plan gratuito suele bloquear el SMTP saliente (errores `Connection timeout`), conviene usar la API HTTP. Si no hay ni API key ni credenciales SMTP, el envío corre en modo de desarrollo (no envía correos reales), de modo que se puede probar el flujo completo en local. Del mismo modo, si `GROQ_API_KEY` no está configurada, los cracks responden con frases de respaldo en vez de cortar el chat.
 
