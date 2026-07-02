@@ -5,6 +5,8 @@ Autor: **Fernando Delgado**
 
 Cracks es una aplicación de mensajería instantánea full-stack inspirada en WhatsApp Web. Permite que los usuarios se registren con su email, lo verifiquen y chateen entre sí en conversaciones privadas y grupales. Además incorpora a **12 deportistas de elite** ("los cracks") precargados como contactos con los que también se puede conversar: cuando el receptor es uno de estos contactos, el backend genera la respuesta mediante IA (Groq), de modo que la API key vive solo en el servidor y nunca llega al navegador.
 
+**Funciones operativas.** Están implementadas y respaldadas por el backend: registro con verificación por email, inicio de sesión con JWT y recuperación de contraseña; directorio de usuarios (todos se ven y chatean entre sí); mensajería privada y grupal con envío, edición, borrado y paginación de mensajes; creación de grupos con edición, eliminación y alta/baja de miembros; contactos con alias, favoritos y bloqueo; estados (historias) de texto o imagen que expiran a las 24 h; respuestas por IA de los 12 cracks; edición de perfil y cambio de tema claro/oscuro.
+
 Este repositorio contiene el **backend**: una API REST construida con **Node.js + Express** sobre **MongoDB**, con arquitectura en capas, autenticación con JWT, verificación por email y un modelo de datos relacional adaptado a Mongoose. El frontend (React + Vite) vive en un repositorio aparte y consume esta API.
 
 ## Demo en vivo
